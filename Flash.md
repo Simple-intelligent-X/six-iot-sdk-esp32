@@ -3,9 +3,11 @@
 ## For default MQTT broker
 python D:/Espressif/frameworks/esp-idf-v5.5.1/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py generate nvs-creds-default.csv nvs-creds.bin 0x1000
 
+> [!TIP]
+> Change D:/Espressif/frameworks/esp-idf-v5.5.1 to your own env path
+
 ## For AWS MQTT broker
 python D:/Espressif/frameworks/esp-idf-v5.5.1/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py generate nvs-creds-aws.csv nvs-creds.bin 0x1000
-
 
 # Erase the flash
 esptool.py --port COM4 erase_flash
@@ -14,8 +16,6 @@ esptool.py --port COM4 erase_flash
 esptool.py --port COM4 write_flash 0xA000 nvs-creds.bin
 
 
-# Select the MQTT broker 
-wss://a2o5o645mb29bc-ats.iot.ap-southeast-1.amazonaws.com/mqtt
-wss://shuhenglianchang.com:30084/mqtt
+
 
 
