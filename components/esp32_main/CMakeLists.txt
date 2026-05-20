@@ -1,5 +1,5 @@
 # Define the component to interact with the IAM backend and to connect to with the MQTT Broker
-set(COMPONENT_REQUIRES esp32_cred esp32_conf esp32_prov_softap esp32_prov_blufi esp32_prov_npm esp32_util esp32_ota esp32_log esp_event esp_wifi esp_http_client json nvs_flash mbedtls mqtt)
+set(COMPONENT_REQUIRES esp32_cred esp32_conf esp32_prov_npm esp32_util esp32_ota esp32_log esp_event esp_wifi esp_http_client json nvs_flash mbedtls mqtt)
 set(COMPONENT_PRIV_REQUIRES) 
 
 

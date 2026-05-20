@@ -464,12 +464,6 @@ CONFIG_SDK_OTA_REQ_DEFAULT_CA=y
 # end of SiX IoT SDK Configuration
 
 #
-# SiX IoT BluFi Configuration
-#
-CONFIG_WIFI_CONNECTION_MAXIMUM_RETRY=2
-# end of SiX IoT BluFi Configuration
-
-#
 # SiX IoT Network Provision Manager Configuration
 #
 CONFIG_EXAMPLE_PROV_TRANSPORT_BLE=y
@@ -485,14 +479,9 @@ CONFIG_EXAMPLE_RESET_PROV_MGR_ON_FAILURE=y
 CONFIG_EXAMPLE_PROV_MGR_CONNECTION_CNT=5
 CONFIG_EXAMPLE_PROV_SHOW_QR=y
 # CONFIG_EXAMPLE_REPROVISIONING is not set
-# end of SiX IoT Network Provision Manager Configuration
-
-#
-# SiX IoT Softap Configuration
-#
 CONFIG_SDK_AP_SSID="ESP32-AP"
 CONFIG_SDK_AP_PASSWORD="12345678"
-# end of SiX IoT Softap Configuration
+# end of SiX IoT Network Provision Manager Configuration
 
 #
 # Compiler options

@@ -1,55 +1,72 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- |
+| Tested Targets | ESP32 | ESP32-C3 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- |
 
-# Hello World Example
+> [!NOTE]
+> This SDK is designed to work across all ESP32 SoC variants, provided the specific chipset includes a hardware connectivity module. The target framework utilized for this SDK is **ESP-IDF v5.5.1**.
 
-Starts a FreeRTOS task to print "Hello World".
+---
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
+# Overview
 
-## How to use example
+A comprehensive ESP32 Chipset SDK designed for the ESP32 series (including ESP32-C3, ESP32-S3, and others). It streamlines firmware engineering by providing robust, production-ready modules:
 
-Follow detailed instructions provided specifically for this example. 
+*   **Network Provisioning:** Automates device onboarding. When a user scans the device QR code via the companion application, the hardware receives the payload and triggers the provisioning workflow natively.
 
-Select the instructions depending on Espressif chip installed on your development board:
+*   **MQTT Connectivity:** Embedded services designed to establish, maintain, and manage secure connections to your product's central MQTT broker.
 
-- [ESP32 Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/index.html)
-- [ESP32-S2 Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/index.html)
+*   **Shadow Service Interaction:** Simplifies state synchronization across the platform by managing transactional topics with the backend Device Shadow Service.
 
+*   **Log Service:** Aggregates and buffers local device logs, automatically synchronizing them to the cloud infrastructure once an active network connection is validated.
 
-## Example folder contents
+*   **OTA (Over-the-Air) Updates:** A reliable, fail-safe remote firmware upgrade mechanism to ensure field devices receive seamless patches and feature rollouts.
 
-The project **hello_world** contains one source file in C language [hello_world_main.c](main/hello_world_main.c). The file is located in folder [main](main).
+---
 
-ESP-IDF projects are built using CMake. The project build configuration is contained in `CMakeLists.txt` files that provide set of directives and instructions describing the project's source files and targets (executable, library, or both). 
+## Quick Start
 
-Below is short explanation of remaining files in the project folder.
+By default, this SDK is pre-configured to operate natively alongside the **SiX IoT Platform** and **SiX IDaaS & IAM**.
 
-```
-├── CMakeLists.txt
-├── pytest_hello_world.py      Python script used for automated testing
-├── main
-│   ├── CMakeLists.txt
-│   └── hello_world_main.c
-└── README.md                  This is the file you are currently reading
-```
+*   **[SiX IoT Platform](https://web.iot.shuhenglianchang.com/index)** handles product lifecycles and device provisioning configurations, such as unique device credentials (private keys) and network-provisioning QR codes.
 
-For more information on structure and contents of ESP-IDF projects, please refer to Section [Build System](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html) of the ESP-IDF Programming Guide.
+*   **[SiX IDaaS & IAM](https://web.iam.shuhenglianchang.com/index)** governs device identity authentication and access control policies across the ecosystem.
 
-## Troubleshooting
+> [!TIP]
+> We highly recommend reviewing the [Quick Start Documentation](https://doc.iot.shuhenglianchang.com/quick-start/quick-start) before proceeding with device integration.
 
-* Program upload failure
+---
 
-    * Hardware connection is not correct: run `idf.py -p PORT monitor`, and reboot your board to see if there are any output logs.
-    * The baud rate for downloading is too high: lower your baud rate in the `menuconfig` menu, and try again.
+## Integration Guide
 
-## Technical support and feedback
+Follow these sequential steps to integrate and execute the SDK on your hardware.
 
-Please use the following feedback channels:
+### 1. Configure the SDK Environment
+Verify and adjust your SDK environment options via `menuconfig` or your configuration UI as shown below:
 
-* For technical queries, go to the [esp32.com](https://esp32.com/) forum
-* For a feature request or bug report, create a [GitHub issue](https://github.com/espressif/esp-idf/issues)
+<p align="center">
+  <img src="readme/config.png" alt="Configuration Screenshot" width="700"/>
+</p>
 
-We will get back to you as soon as possible.
+### 2. Configure Device Identities & Credentials
+Navigate to the `device_certs/` directory to input your specific device credentials, target identification schemas, and provisioning QR code metadata.
 
-// https://six-iot-ota.s3.ap-southeast-1.amazonaws.com/six-iot-sdk_v1.0.0_20250816.bin
+### 3. Flash Credentials to the Target Board
+Follow the detailed procedures outlined in [Flash.md](Flash.md) to safely write the unique device authentication payload into its dedicated NVS/storage partition.
+
+> [!WARNING]
+> For production deployments, you should automate the provisioning pipeline to dynamically fetch unique device credentials, generate target partition table binaries, and serialize the flashing process.
+
+---
+
+## Technical Support & Feedback
+
+For technical queries, architectural discussions, or ecosystem feedback, please reach out via email:
+
+*   **Engineering Support:** stephen.yu@six-inno.cn
+
+---
+
+## Dedicated IoT Platform Setup
+
+For dedicated enterprise IoT platform deployments, infrastructure hosting, or private cloud setups, please contact our solutions team:
+
+*   **Enterprise Service:** service@six-inno.cn
