@@ -110,5 +110,25 @@ menu "SiX IoT Network Provision Manager Configuration"
         help
             Enable re-provisioning - allow the device to provision for new credentials
             after previous successful provisioning.
+    
+    config SDK_AP_SSID 
+        string "the ssid for the AP"
+        default "ESP32-AP"
+        help
+            This is the example SSID for the AP.
+            
+    config SDK_AP_PASSWORD
+        string "the password for the AP"
+        default "12345678"
+        help
+            This is the password for the AP.
+    
+    # config WIFI_CONNECTION_MAXIMUM_RETRY
+    #     int "WiFi connection maximum retry"
+    #     depends on EXAMPLE_PROV_TRANSPORT_SOFTAP
+    #     range 0 255
+    #     default 2
+    #     help
+    #         WiFi connection maximum retry, from 0 to 255.
 
 endmenu

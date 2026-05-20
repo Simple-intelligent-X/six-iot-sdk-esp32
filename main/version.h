@@ -3,5 +3,5 @@
 
 #define PROJECT_NAME      "six-iot-sdk"
 #define PROJECT_VERSION   "1.0.0"
-#define VERSION_FULL      "1.0.0_20260416"
-#define BUILD_TIMESTAMP   "20260416"
+#define VERSION_FULL      "1.0.0_20260520"
+#define BUILD_TIMESTAMP   "20260520"
