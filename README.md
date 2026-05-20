@@ -1,3 +1,6 @@
+> [!TIP]
+> This SDK works seamlessly alongside the [six-iot-sdk-android](https://github.com/Simple-intelligent-X/six-iot-sdk-android).
+
 | Tested Targets | ESP32 | ESP32-C3 | ESP32-S3 |
 | ----------------- | ----- | -------- | -------- |
 
@@ -51,6 +54,9 @@ Navigate to the `device_certs/` directory to input your specific device credenti
 
 ### 3. Flash Credentials to the Target Board
 Follow the detailed procedures outlined in [Flash.md](Flash.md) to safely write the unique device authentication payload into its dedicated NVS/storage partition.
+
+### 4. Run and Test the SDK in Your IDE
+Connect your ESP32 development target to your workstation via USB, open your preferred IDE (such as VS Code with the ESP-IDF Extension), and flash the firmware. You can monitor the local logs via the serial terminal to verify that the network provisioning and cloud synchronization tasks initiate successfully.
 
 > [!WARNING]
 > For production deployments, you should automate the provisioning pipeline to dynamically fetch unique device credentials, generate target partition table binaries, and serialize the flashing process.
