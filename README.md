@@ -1,3 +1,5 @@
+https://github.com/user-attachments/assets/9316cc08-838b-43ad-8750-62db06f7737c
+
 > [!TIP]
 > This SDK works seamlessly alongside the [six-iot-sdk-android](https://github.com/Simple-intelligent-X/six-iot-sdk-android).
 
