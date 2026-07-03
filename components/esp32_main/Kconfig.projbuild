@@ -190,5 +190,23 @@ menu "SiX IoT SDK Configuration"
             help
                 This option is to use the CA from AWS Cloud
    	endchoice
+
+
+    choice SDK_APP_BOOT_FLASH_OPTION
+        prompt "SDK APP boot flash option"
+        default NORMAL_BOOT
+        help
+            Choose the flash clean option upon app boot
+
+        config NORMAL_BOOT
+            bool "NORMAL_BOOT"
+            help
+                Default option to retain the flash data
+
+        config FACTORY_RESET
+            bool "FACTORY_RESET"
+            help
+                This option is to clean the flash to simulate a factory reset
+   	endchoice
             
 endmenu

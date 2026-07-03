@@ -385,7 +385,10 @@ void run_six_iot_sdk_main_task() {
 
 // main entry point
 void six_iot_run_sdk(void) {
-	six_iot_factory_reset();
+	//if SDK user select to has a clean start, then 
+	#ifdef CONFIG_FACTORY_RESET
+		six_iot_factory_reset();
+	#endif
 	six_nvs_init_storage();
 	nvs_flash_init_partition(CREDENTIALS_PARTITION);
 	s_iot_cfg.iam.device_guid = get_device_guid();
