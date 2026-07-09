@@ -10,7 +10,7 @@
 #include "version.h"
 
 // for ESP-Devkits-V4, except the LED for the power, no other programable LED on the borad
-#define BLINK_GPIO 2
+#define BLINK_GPIO CONFIG_BLINK_LED_GPIO
 
 static const char *TAG = "six_iot_demo";
 static char *s_product_id = NULL;

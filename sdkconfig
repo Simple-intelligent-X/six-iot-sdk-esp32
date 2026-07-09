@@ -436,6 +436,7 @@ CONFIG_PARTITION_TABLE_MD5=y
 # SiX IoT IF Configuration
 #
 # CONFIG_TRACE_MAIN_TASK_STACK is not set
+CONFIG_BLINK_LED_GPIO=23
 # end of SiX IoT IF Configuration
 
 #

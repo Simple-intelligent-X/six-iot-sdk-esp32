@@ -5,5 +5,11 @@ menu "SiX IoT IF Configuration"
   		default false
    		help
     		This config is used to trace the main task stack
+	
+	config BLINK_LED_GPIO
+		int "Blink LED GPIO"
+		default 23
+		help
+			This config is used to set the GPIO number for the blink LED
             
 endmenu
