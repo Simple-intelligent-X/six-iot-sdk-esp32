@@ -33,7 +33,7 @@ menu "SiX IoT SDK Configuration"
             
     config SDK_TOKEN_ENDPOINT
         string "Token endpoint for the device to exchange the ID/access token"
-        default "https://iam.shuhenglianchang.com/oauth2/token"
+        default "https://iam.shuhenglianchang.com/token"
         help
             This is the token endpoint for the device to exchange the device private key
             with the ID/access token.

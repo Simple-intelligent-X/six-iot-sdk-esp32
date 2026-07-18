@@ -304,9 +304,11 @@ static void s_http_rest_for_tokens(const char *token_endpoint, char *jwt, six_ia
 	ESP_LOGD(TAG, "post_data.length after populate: %d\n", strlen(post_data));
 
 	ESP_LOGD(TAG, "Reuqest url is:%s\n", token_endpoint);
+	//ESP_LOGD(TAG, "post_data:%s\n", post_data);
 	ESP_LOGD(TAG, "Free heap size before send request: %ld", esp_get_free_heap_size());
 
 	esp_http_client_set_method(client, HTTP_METHOD_POST);
+	esp_http_client_set_header(client, "Content-Type", "application/x-www-form-urlencoded");
 	// esp_http_client_set_header(client, "Content-Type", "application/json");
 	esp_http_client_set_post_field(client, post_data, strlen(post_data));
 	esp_err_t err = esp_http_client_perform(client);

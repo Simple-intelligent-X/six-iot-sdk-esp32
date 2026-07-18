@@ -10,7 +10,10 @@
 #include "version.h"
 
 // for ESP-Devkits-V4, except the LED for the power, no other programable LED on the borad
-#define BLINK_GPIO CONFIG_BLINK_LED_GPIO
+// 23
+#define BLINK_GPIO CONFIG_BLINK_LED_GPIO 
+// 32 
+#define RELAY_GPIO CONFIG_RELAY_GPIO
 
 static const char *TAG = "six_iot_demo";
 static char *s_product_id = NULL;
@@ -59,18 +62,33 @@ static void publish_light_status(int on) {
 static void s_configure_led(void) {
 	// ESP_LOGD(TAG, "Example configured to blink GPIO LED!");
 	gpio_reset_pin(BLINK_GPIO);
+
+	#ifdef CONFIG_TEST_RELAY_GPIO
+		gpio_reset_pin(RELAY_GPIO);
+	#endif
 	/* Set the GPIO as a push/pull output */
 	gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
+
+	#ifdef CONFIG_TEST_RELAY_GPIO
+		gpio_set_direction(RELAY_GPIO, GPIO_MODE_OUTPUT);
+	#endif
 }
 
 static void s_blink_led_on(void) {
 	/* Set the GPIO level according to the state (LOW or HIGH)*/
 	gpio_set_level(BLINK_GPIO, 1);
+	#ifdef CONFIG_TEST_RELAY_GPIO
+		gpio_set_level(RELAY_GPIO, 1);
+	#endif
+	ESP_LOGI(TAG, "GPIO %d and GPIO %d for LED and Relay is set to HIGH", BLINK_GPIO, RELAY_GPIO);
 }
 
 static void s_blink_led_off(void) {
 	/* Set the GPIO level according to the state (LOW or HIGH)*/
 	gpio_set_level(BLINK_GPIO, 0);
+	#ifdef CONFIG_TEST_RELAY_GPIO
+		gpio_set_level(RELAY_GPIO, 0);
+	#endif
 }
 
 static int s_parse_light_json(char *data) {

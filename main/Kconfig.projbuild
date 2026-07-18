@@ -8,8 +8,20 @@ menu "SiX IoT IF Configuration"
 	
 	config BLINK_LED_GPIO
 		int "Blink LED GPIO"
-		default 23
+		default 2
 		help
 			This config is used to set the GPIO number for the blink LED
+	
+	config TEST_RELAY_GPIO
+		bool "Test relay GPIO"
+		default false
+		help
+			This config is used to set the GPIO number for the test relay
+
+	config RELAY_GPIO
+		int "Relay GPIO"
+		default 32
+		help
+			This config is used to set the GPIO number for the relay
             
 endmenu
