@@ -436,13 +436,16 @@ CONFIG_PARTITION_TABLE_MD5=y
 # SiX IoT IF Configuration
 #
 # CONFIG_TRACE_MAIN_TASK_STACK is not set
+CONFIG_BLINK_LED_GPIO=2
+CONFIG_TEST_RELAY_GPIO=y
+CONFIG_RELAY_GPIO=32
 # end of SiX IoT IF Configuration
 
 #
 # SiX IoT SDK Configuration
 #
 CONFIG_ESP32_NETWORK_PROV_MANAGER=y
-CONFIG_SDK_TOKEN_ENDPOINT="https://iam.shuhenglianchang.com/oauth2/token"
+CONFIG_SDK_TOKEN_ENDPOINT="https://iam.shuhenglianchang.com/token"
 CONFIG_SDK_MQTT_ENDPOINT="wss://shuhenglianchang.com:30084/mqtt"
 CONFIG_SDK_SNTP_URL="ntp.aliyun.com"
 CONFIG_SDK_MQTT_CONN_KEEPALIVE=30

@@ -5,5 +5,23 @@ menu "SiX IoT IF Configuration"
   		default false
    		help
     		This config is used to trace the main task stack
+	
+	config BLINK_LED_GPIO
+		int "Blink LED GPIO"
+		default 2
+		help
+			This config is used to set the GPIO number for the blink LED
+	
+	config TEST_RELAY_GPIO
+		bool "Test relay GPIO"
+		default false
+		help
+			This config is used to set the GPIO number for the test relay
+
+	config RELAY_GPIO
+		int "Relay GPIO"
+		default 32
+		help
+			This config is used to set the GPIO number for the relay
             
 endmenu
