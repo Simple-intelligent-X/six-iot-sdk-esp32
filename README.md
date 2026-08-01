@@ -7,7 +7,7 @@ https://github.com/user-attachments/assets/9316cc08-838b-43ad-8750-62db06f7737c
 | ----------------- | ----- | -------- | -------- |
 
 > [!NOTE]
-> This SDK is designed to work across all ESP32 SoC variants, provided the specific chipset includes a hardware connectivity module. The target framework utilized for this SDK is **ESP-IDF v5.5.1**.
+> This SDK is designed to work across all ESP32 SoC variants, provided the specific chipset includes a hardware connectivity module. The target framework utilized for this SDK is **ESP-IDF v5.5.5**.
 
 ---
 

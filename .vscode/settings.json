@@ -55,7 +55,7 @@
   "idf.espIdfPathWin": "D:\\Espressif\\frameworks\\esp-idf-v5.5.1",
   "idf.toolsPathWin": "d:\\Espressif",
   "idf.pythonInstallPath": "d:\\Espressif\\tools\\idf-python\\3.11.2\\python.exe",
-  "idf.monitorPort": "COM4",
+  "idf.monitorPort": "/dev/tty.wchusbserial1110",
   "idf.customExtraVars": {
     "OPENOCD_SCRIPTS": "D:\\Espressif\\tools\\openocd-esp32\\v0.12.0-esp32-20240318/openocd-esp32/share/openocd/scripts",
     "IDF_CCACHE_ENABLE": "1",
@@ -68,5 +68,6 @@
     "--query-driver=d:\\Espressif\\tools\\xtensa-esp-elf\\esp-14.2.0_20241119\\xtensa-esp-elf\\bin\\xtensa-esp32-elf-gcc.exe",
     "--compile-commands-dir=d:\\workspace\\six-iot\\six-iot-sdk\\esp32\\six-iot-sdk\\build"
   ],
-  "idf.currentSetup": "D:\\Espressif\\frameworks\\esp-idf-v5.5.1"
+  "idf.currentSetup": "/Users/a0000/.espressif/v5.5.5/esp-idf",
+  "idf.port": "/dev/tty.wchusbserial1110"
 }
