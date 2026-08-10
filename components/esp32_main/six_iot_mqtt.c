@@ -3,12 +3,14 @@
  *
  *  Created on: 2023年7月23日
  *      Author: Stephen Yu
+ *
  */
 #include "esp_mac.h"
 #include <esp_event.h>
 #include <esp_log.h>
 #include <esp_netif.h>
 #include <esp_system.h>
+#include <esp_timer.h>
 #include <esp_wifi.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
@@ -65,6 +67,8 @@ extern const uint8_t six_ca_pem_end[] asm("_binary_six_ca_pem_end");
 #define MQTT_CLIENT_WATCH_DOG_EVENT_FIRST_DELAY pdMS_TO_TICKS(5000)
 #define MQTT_CLIENT_WATCH_DOG_INTERVAL pdMS_TO_TICKS(1000 * 10)
 #define MQTT_CLIENT_STOP_EVENT_DELAY pdMS_TO_TICKS(100)
+// FIX(6): timeout for taking s_mqtt_state_mutex around state reads/writes.
+#define MQTT_STATE_LOCK_TIMEOUT pdMS_TO_TICKS(50)
 
 static char *s_iot_sdk_update_delta_topic = NULL;
 static char *s_iot_sdk_ota_topic = NULL;
@@ -110,7 +114,10 @@ static char s_error_msg[256];
 static char *s_current_mqtt_password = NULL;
 static char *s_current_aws_mqtt_username = NULL;
 
-static time_t s_mqtt_disconnect_time_start = 0;
+// fed from xTaskGetTickCount()/1000 which silently
+// assumed a 1ms tick period. Now stores whole seconds derived from
+// esp_timer_get_time() (always microseconds regardless of tick rate).
+static int64_t s_mqtt_disconnect_time_start = 0;
 #define MAX_DISCONNECT_TICKS_SECONDS 60
 
 static SemaphoreHandle_t s_mqtt_state_mutex = NULL;
@@ -119,6 +126,40 @@ static void s_log_error_if_nonzero(const char *message, int error_code) {
 	if (error_code != 0) {
 		ESP_LOGE(TAG, "Last error %s: 0x%x", message, error_code);
 		six_log_message(message);
+	}
+}
+
+// centralize client teardown so every failure path can safely
+// destroy a half-initialized client instead of leaking it and leaving
+// the global `client` pointer stuck non-NULL forever.
+static void s_destroy_mqtt_client(void) {
+	if (client) {
+		esp_mqtt_client_destroy(client);
+		client = NULL;
+	}
+}
+
+// all reads/writes of s_mqtt_state now go through these helpers
+// so six_iot_reconnect_mqtt() and six_iot_handle_mqtt_conn_error() can't
+// race each other. Falls back to unlocked access only if called before
+// the mutex exists (shouldn't happen in normal startup order).
+static mqtt_client_state_t s_get_mqtt_state(void) {
+	mqtt_client_state_t state;
+	if (s_mqtt_state_mutex && xSemaphoreTake(s_mqtt_state_mutex, MQTT_STATE_LOCK_TIMEOUT) == pdTRUE) {
+		state = s_mqtt_state;
+		xSemaphoreGive(s_mqtt_state_mutex);
+	} else {
+		state = s_mqtt_state;
+	}
+	return state;
+}
+
+static void s_set_mqtt_state(mqtt_client_state_t new_state) {
+	if (s_mqtt_state_mutex && xSemaphoreTake(s_mqtt_state_mutex, MQTT_STATE_LOCK_TIMEOUT) == pdTRUE) {
+		s_mqtt_state = new_state;
+		xSemaphoreGive(s_mqtt_state_mutex);
+	} else {
+		s_mqtt_state = new_state;
 	}
 }
 
@@ -132,12 +173,31 @@ void _six_iot_request_new_token_handler(bool success, char *new_password, char *
 // when there is disconnect event is reported, we will not handle reconnect in the mqtt event task, will send event to
 // the six_iot_event_loop task to handle the reconnect
 void six_iot_reconnect_mqtt() {
+	if (s_mqtt_state_mutex && xSemaphoreTake(s_mqtt_state_mutex, MQTT_STATE_LOCK_TIMEOUT) != pdTRUE) {
+		ESP_LOGW(TAG, "Could not acquire mqtt state lock, skip this round reconnect");
+		six_log_message("Could not acquire mqtt state lock, skip this round reconnect");
+		return;
+	}
 	if (s_mqtt_state == MQTT_STATE_RECONNECTING) {
 		ESP_LOGW(TAG, "MQTT client is reconnecting, skip this round reconnect");
 		six_log_message("MQTT client is reconnecting, skip this round reconnect");
+		if (s_mqtt_state_mutex) {
+			xSemaphoreGive(s_mqtt_state_mutex);
+		}
 		return;
 	}
 	s_mqtt_state = MQTT_STATE_RECONNECTING;
+	if (s_mqtt_state_mutex) {
+		xSemaphoreGive(s_mqtt_state_mutex);
+	}
+
+	// stop the client here instead of in six_iot_handle_mqtt_conn_error().
+	// six_iot_reconnect_mqtt() is invoked from the consumer of 
+	// the SIX_IOT_EVENT/MQTT_DISCONNECTED event on s_six_iot_event_loop
+	if (client) {
+		esp_mqtt_client_stop(client);
+	}
+
 	char *id_token = six_nvs_read_id_token();
 	if (NULL != id_token && !six_iam_token_expired(id_token, Second)) {
 		ESP_LOGD(TAG, "Reconnect mqtt client with token in nvs");
@@ -154,7 +214,7 @@ void six_iot_reconnect_mqtt() {
 }
 
 void six_iot_handle_mqtt_conn_error() {
-	if (xSemaphoreTake(s_mqtt_state_mutex, pdMS_TO_TICKS(50)) != pdTRUE) {
+	if (xSemaphoreTake(s_mqtt_state_mutex, MQTT_STATE_LOCK_TIMEOUT) != pdTRUE) {
 		ESP_LOGW(TAG, "six_iot_handle_mqtt_conn_error is executing, skip it");
 		six_log_message("six_iot_handle_mqtt_conn_error is executing, skip it");
 		return;
@@ -180,15 +240,16 @@ static char *_get_error_msg(char *msg, esp_err_t err) {
 	return s_error_msg;
 }
 
+
 void _six_iot_update_s_mqtt_cfg_newpwd(char *new_password) {
 	if (NULL == new_password) {
 		six_defregment_heap(TAG);
 		ESP_LOGE(TAG, "New password is NULL, cannot reconfigure mqtt client!");
 		six_log_message("New password is NULL, cannot reconfigure mqtt client!");
-		s_mqtt_state = MQTT_CREATE_CLIENT_FAIL;
+		s_set_mqtt_state(MQTT_CREATE_CLIENT_FAIL);
 		return;
 	}
-	
+
 	if (s_current_mqtt_password != NULL) {
 		free(s_current_mqtt_password);
 		s_current_mqtt_password = NULL;
@@ -197,7 +258,7 @@ void _six_iot_update_s_mqtt_cfg_newpwd(char *new_password) {
 	s_current_mqtt_password = strdup(new_password);
 	// Point the config to the managed pointer
 	s_mqtt_cfg.credentials.authentication.password = s_current_mqtt_password;
-	
+
 	if (client) {
 		ESP_LOGD(TAG, "Update config of the client to apply new pwd");
 		esp_err_t ret = esp_mqtt_set_config(client, &s_mqtt_cfg);
@@ -205,7 +266,9 @@ void _six_iot_update_s_mqtt_cfg_newpwd(char *new_password) {
 			six_defregment_heap(TAG);
 			ESP_LOGE(TAG, "Failed to update config for mqtt client, err: %d", ret);
 			six_log_message(_get_error_msg("Failed to update config for mqtt client", ret));
-			s_mqtt_state = MQTT_CREATE_CLIENT_FAIL;
+			//Destroy it so the next attempt can actually re-init from scratch.
+			s_destroy_mqtt_client();
+			s_set_mqtt_state(MQTT_CREATE_CLIENT_FAIL);
 			return;
 		}
 	} else {
@@ -216,7 +279,7 @@ void _six_iot_update_s_mqtt_cfg_newpwd(char *new_password) {
 			six_defregment_heap(TAG);
 			ESP_LOGE(TAG, "Failed to initialize new mqtt client!");
 			six_log_message("Failed to initialize new mqtt client!");
-			s_mqtt_state = MQTT_CREATE_CLIENT_FAIL;
+			s_set_mqtt_state(MQTT_CREATE_CLIENT_FAIL);
 			return;
 		}
 		esp_err_t ret =
@@ -225,7 +288,8 @@ void _six_iot_update_s_mqtt_cfg_newpwd(char *new_password) {
 			six_defregment_heap(TAG);
 			ESP_LOGE(TAG, "Failed to register event for new mqtt client, err: %d", ret);
 			six_log_message(_get_error_msg("Failed to register event for new mqtt client", ret));
-			s_mqtt_state = MQTT_CREATE_CLIENT_FAIL;
+			s_destroy_mqtt_client();
+			s_set_mqtt_state(MQTT_CREATE_CLIENT_FAIL);
 			return;
 		}
 		ret = esp_mqtt_client_start(client);
@@ -233,11 +297,12 @@ void _six_iot_update_s_mqtt_cfg_newpwd(char *new_password) {
 			six_defregment_heap(TAG);
 			ESP_LOGE(TAG, "Failed to start new mqtt client, err: %d", ret);
 			six_log_message(_get_error_msg("Failed to start new mqtt client", ret));
-			s_mqtt_state = MQTT_CREATE_CLIENT_FAIL;
+			s_destroy_mqtt_client();
+			s_set_mqtt_state(MQTT_CREATE_CLIENT_FAIL);
 			return;
 		}
 	}
-	s_mqtt_state = MQTT_STATE_READY;
+	s_set_mqtt_state(MQTT_STATE_READY);
 }
 
 /*
@@ -272,8 +337,7 @@ static void s_mqtt_event_handler(void *handler_args, esp_event_base_t base, int3
 		ESP_LOGD(TAG, "MQTT_EVENT_DISCONNECTED");
 		six_log_message("MQTT disconnected");
 		s_mqtt_connected = false;
-		// log the last time that the connection is disconnected
-		s_mqtt_disconnect_time_start = xTaskGetTickCount() / 1000;
+		s_mqtt_disconnect_time_start = esp_timer_get_time() / 1000000;
 		break;
 	case MQTT_EVENT_SUBSCRIBED:
 		ESP_LOGD(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
@@ -288,7 +352,6 @@ static void s_mqtt_event_handler(void *handler_args, esp_event_base_t base, int3
 		ESP_LOGD(TAG, "MQTT_EVENT_DATA");
 		ESP_LOGD(TAG, "TOPIC = %.*s\r\n", event->topic_len, event->topic);
 		ESP_LOGD(TAG, "DATA = %.*s\r\n", event->data_len, event->data);
-		vTaskDelay(pdMS_TO_TICKS(100));
 		break;
 	case MQTT_EVENT_ERROR:
 		ESP_LOGD(TAG, "MQTT_EVENT_ERROR");
@@ -304,10 +367,8 @@ static void s_mqtt_event_handler(void *handler_args, esp_event_base_t base, int3
 				ESP_LOGE(TAG, "Authentication failed - may need to update the password");
 				six_log_message("Authentication failed - may need to update the password");
 				if (s_mqtt_cfg.credentials.authentication.password) {
-					ESP_LOGW(TAG, "token: %s", s_mqtt_cfg.credentials.authentication.password);
-					// six_log_message(s_mqtt_cfg.credentials.authentication.password);
+					ESP_LOGW(TAG, "Auth failed with a credential set (redacted)");
 				}
-				// stop the client first to clear any internal timer/backoffs
 				six_iot_handle_mqtt_conn_error();
 			}
 		}
@@ -343,7 +404,9 @@ void six_iot_start_mqtt(six_iot_config_t *iot_config, char *mqtt_endpoint, char 
 	s_mqtt_cfg.broker.address.uri = mqtt_endpoint;
 #if CONFIG_DEFAULT_MQTT_BROKER && CONFIG_DEFAULT_ROOT_CA
 	s_mqtt_cfg.credentials.username = mqtt_username;
-	//only set the s_current_mqtt_password when directly use token as password
+	if (s_current_mqtt_password != NULL) {
+		free(s_current_mqtt_password);
+	}
 	s_current_mqtt_password = strdup(mqtt_password);
 	s_mqtt_cfg.credentials.authentication.password = s_current_mqtt_password;
 	s_mqtt_cfg.broker.verification.certificate = (const char *)six_ca_pem_start;
@@ -351,9 +414,9 @@ void six_iot_start_mqtt(six_iot_config_t *iot_config, char *mqtt_endpoint, char 
 	s_mqtt_cfg.broker.verification.skip_cert_common_name_check = true;
 #endif
 #if CONFIG_AWS_MQTT_BROKER && CONFIG_AWS_ROOT_CA
-	// snprintf(aws_auth_password_buffer, sizeof(aws_auth_password_buffer), 
-    //          "token=%s", 
-    //          mqtt_password);
+	if (s_current_mqtt_password != NULL) {
+		free(s_current_mqtt_password);
+	}
 	s_current_mqtt_password = strdup(mqtt_password);
 	s_mqtt_cfg.credentials.username = CONFIG_AWS_IOT_USERNAME_WITH_AUTHORIZER;
 	s_mqtt_cfg.credentials.authentication.password = s_current_mqtt_password;
@@ -365,8 +428,17 @@ void six_iot_start_mqtt(six_iot_config_t *iot_config, char *mqtt_endpoint, char 
 #endif
 	s_mqtt_cfg.credentials.client_id = mqtt_clientid;
 
-	// we will handle the reconnect manually
+	// enable auto-connect
 	// s_mqtt_cfg.network.disable_auto_reconnect = true;
+
+	// free any previously-allocated topic strings before
+	// reassigning, guarding against a leak on re-entry.
+	free(s_iot_sdk_update_delta_topic);
+	free(s_iot_sdk_ota_topic);
+	free(s_iot_sdk_ping_topic);
+	free(s_iot_sdk_lwt_topic);
+	free(s_iot_sdk_log_topic);
+
 	s_iot_sdk_update_delta_topic =
 		six_iot_get_shadow_topic(s_iot_cfg->iot_product_id, s_iot_cfg->mqtt_clientid, UpdateDelta);
 	s_iot_sdk_ota_topic = six_iot_get_shadow_topic(s_iot_cfg->iot_product_id, s_iot_cfg->mqtt_clientid, Ota);
@@ -384,11 +456,32 @@ void six_iot_start_mqtt(six_iot_config_t *iot_config, char *mqtt_endpoint, char 
 	// we need to retain the LWT message on mqtt broker
 	s_mqtt_cfg.session.last_will.retain = true;
 
+	s_destroy_mqtt_client();
+
 	client = esp_mqtt_client_init(&s_mqtt_cfg);
+	if (client == NULL) {
+		ESP_LOGE(TAG, "Failed to initialize mqtt client!");
+		six_log_message("Failed to initialize mqtt client!");
+		s_set_mqtt_state(MQTT_CREATE_CLIENT_FAIL);
+		return;
+	}
 	// configure_aws_iot_alpn(client);
-	esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, s_mqtt_event_handler, handler);
-	// vTaskDelay(pdMS_TO_TICKS(5000));
-	esp_mqtt_client_start(client);
+	esp_err_t ret = esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, s_mqtt_event_handler, handler);
+	if (ret != ESP_OK) {
+		ESP_LOGE(TAG, "Failed to register event for mqtt client, err: %d", ret);
+		six_log_message(_get_error_msg("Failed to register event for mqtt client", ret));
+		s_destroy_mqtt_client();
+		s_set_mqtt_state(MQTT_CREATE_CLIENT_FAIL);
+		return;
+	}
+	ret = esp_mqtt_client_start(client);
+	if (ret != ESP_OK) {
+		ESP_LOGE(TAG, "Failed to start mqtt client, err: %d", ret);
+		six_log_message(_get_error_msg("Failed to start mqtt client", ret));
+		s_destroy_mqtt_client();
+		s_set_mqtt_state(MQTT_CREATE_CLIENT_FAIL);
+		return;
+	}
 	esp_event_post_to(s_six_iot_event_loop, SIX_IOT_EVENT, MQTT_CLIENT_WATCH_DOG, NULL, 0,
 					  MQTT_CLIENT_WATCH_DOG_EVENT_FIRST_DELAY);
 }
@@ -397,37 +490,38 @@ void six_iot_watch_client() {
 	ESP_LOGD(TAG, "six_iot_watch_client event is triggered");
 	if (!s_mqtt_connected && s_mqtt_connected_once) {
 		six_defregment_heap(TAG);
-		time_t current_time = xTaskGetTickCount() / 1000;
-		time_t elapsed_time = current_time - s_mqtt_disconnect_time_start;
-
+		
+		int64_t current_time = esp_timer_get_time() / 1000000;
+		int64_t elapsed_time = current_time - s_mqtt_disconnect_time_start;
+		//watchdog is triggered
 		if (elapsed_time >= MAX_DISCONNECT_TICKS_SECONDS) {
-			ESP_LOGE(TAG, "Watchdog triggered: MQTT disconnected for over %ld seconds. Forcing manual reconnect.",
-					 elapsed_time);
+			ESP_LOGE(TAG, "Watchdog triggered: MQTT disconnected for over %lld seconds. Forcing manual reconnect.",
+					 (long long)elapsed_time);
 			six_log_message("Watchdog triggered: MQTT disconnected for over 60 seconds. Forcing manual reconnect.");
 			six_iot_handle_mqtt_conn_error();
 			// Reset the watchdog timer immediately to prevent re-triggering soon
-			s_mqtt_disconnect_time_start = xTaskGetTickCount() / 1000;
+			s_mqtt_disconnect_time_start = esp_timer_get_time() / 1000000;
 		} else {
-			ESP_LOGW(TAG, "MQTT watchdog monitoring. Disconnected time: %ld seconds.", elapsed_time);
+			ESP_LOGW(TAG, "MQTT watchdog monitoring. Disconnected time: %lld seconds.", (long long)elapsed_time);
 		}
 	}
 }
 
 bool six_iot_publish_conn_online_msg() {
-	if (MQTT_STATE_RECONNECTING == s_mqtt_state) {
+	if (MQTT_STATE_RECONNECTING == s_get_mqtt_state()) {
 		ESP_LOGW(TAG, "MQTT client is disconnecting, skip conn status message");
 		return false;
+	}
+	if (!client) {
+		ESP_LOGW(TAG, "MQTT client is NULL, can't publish conn status message through NULL client");
+		return true;
 	}
 	if (!s_mqtt_connected_once) {
 		ESP_LOGW(TAG, "MQTT client has never connected, skip conn status message");
 		return false;
 	}
-	if (!client) {
-		ESP_LOGE(TAG, "MQTT client is NULL, can't publish conn status message through NULL client");
-		return true;
-	}
 	if (!s_mqtt_connected) {
-		ESP_LOGE(TAG, "MQTT client is not connected, can't publish conn status message through non-connected client");
+		ESP_LOGW(TAG, "MQTT client is not connected, can't publish conn status message through non-connected client");
 		return true;
 	}
 	// we will use the LWT topic to report the conn status
@@ -450,15 +544,19 @@ bool six_iot_publish_conn_online_msg() {
 
 esp_err_t six_iot_publish_log_msg(char *log) {
 	if (log == NULL) {
-		ESP_LOGD(TAG, "log is NULL, return directly");
+		ESP_LOGW(TAG, "log is NULL, return directly");
 		return ESP_FAIL;
 	}
+	if (MQTT_STATE_RECONNECTING == s_get_mqtt_state()) {
+		ESP_LOGW(TAG, "MQTT client is disconnecting, skip log message");
+		return false;
+	}
 	if (!client) {
-		ESP_LOGE(TAG, "client is NULL, can't publish log message through NULL client");
+		ESP_LOGW(TAG, "client is NULL, can't publish log message through NULL client");
 		return ESP_FAIL;
 	}
 	if (!s_mqtt_connected) {
-		ESP_LOGE(TAG, "client is not connected, can't publish log message through non-connected client");
+		ESP_LOGW(TAG, "client is not connected, can't publish log message through non-connected client");
 		return ESP_FAIL;
 	}
 	int size = sizeof(char) * (strlen(log) + 1);
