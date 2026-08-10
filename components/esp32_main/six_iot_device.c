@@ -81,7 +81,7 @@ void _six_iam_refresh_device_tokens_with_local_key(const char *private_key);
 
 void _six_iot_provision_device_by_iam(void);
 
-bool _six_is_tokens_valide_in_nvs(bool post_event);
+bool _six_is_tokens_valid_in_nvs(bool post_event);
 
 void _six_iam_exchange_tokens(const char *token_endpoint, const char *jwt, six_iam_token_handler_t token_handler);
 
@@ -708,7 +708,7 @@ void _six_iot_provision_device_by_iam(void) {
 
 char *_six_iot_obtain_key_from_local(void) { return get_device_private_key(); }
 
-bool _six_is_tokens_valide_in_nvs(bool post_event) {
+bool _six_is_tokens_valid_in_nvs(bool post_event) {
 	char *id_token_in_nvs = six_nvs_read_id_token();
 
 	char *access_token_in_nvs = six_nvs_read_access_token();
@@ -767,7 +767,7 @@ void six_iam_exchange_device_tokens(six_iot_config_t *iot_config, esp_event_loop
 	/*
 	 * If valid tokens are already stored in NVS, use them directly.
 	 */
-	if (_six_is_tokens_valide_in_nvs(true)) {
+	if (_six_is_tokens_valid_in_nvs(true)) {
 		return;
 	}
 
