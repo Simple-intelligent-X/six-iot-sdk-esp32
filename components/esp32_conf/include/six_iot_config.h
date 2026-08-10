@@ -58,8 +58,7 @@ typedef enum {
 	PROVISION_STATUS_DEVICE_AUTH_EXG_TOKENS_SUCCEED,
 	PROVISION_STATUS_DEVICE_AUTH_EXG_ID_TOKEN_SUCCEED,
 	PROVISION_STATUS_DEVICE_AUTH_EXG_ACCESS_TOKEN_SUCCEED,
-	
-	
+
 	// status for "bind device"
 	PROVISION_STATUS_BIND_DEVICE_REC_CMD,
 	PROVISION_STATUS_BIND_DEVICE_START,
@@ -68,7 +67,7 @@ typedef enum {
 	PROVISION_STATUS_BIND_DEVICE_REQ_CHALLENGE_CMD,
 	PROVISION_STATUS_BIND_DEVICE_REQ_FAIL,
 	PROVISION_STATUS_BIND_DEVICE_RESULT_FAIL,
-	
+
 	// request to refresh the token
 	REFRESH_DEVICE_TOKEN_INTENT,
 	MQTT_DISCONNECTED,
@@ -88,8 +87,8 @@ typedef struct {
 
 ESP_EVENT_DECLARE_BASE(SIX_IOT_EVENT);
 
-#define SIX_IAM_DEVICE_JWT_ASSERTION                                           \
-	"grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer:six-device&"       \
+#define SIX_IAM_DEVICE_JWT_ASSERTION                                                                                   \
+	"grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer:six-device&"                                               \
 	"assertion=%s"
 #define SIX_IAM_BIND_DEVICE_BODY "deviceGuid=%s&targetPrincipalGuid=%s"
 #define SIX_IAM_AUTH_HEADER_NAME "Authorization"
@@ -102,12 +101,10 @@ typedef void (*six_iot_bind_device_result_handler_t)(char *result);
 
 typedef void (*six_iot_provision_status_handler_t)(six_iot_event_t status);
 
-typedef void (*six_iot_mqtt_event_handler_t)(esp_event_base_t base,
-											 int32_t event_id,
-											 esp_mqtt_event_handle_t event);
+typedef void (*six_iot_mqtt_event_handler_t)(esp_event_base_t base, int32_t event_id, esp_mqtt_event_handle_t event);
 
 typedef struct {
-	//char *rsa_pem_private_key;
+	// char *rsa_pem_private_key;
 	char *device_guid;
 	char *token_endpoint;
 } six_iam_config_t;

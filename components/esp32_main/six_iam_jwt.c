@@ -27,7 +27,6 @@ static const char *TAG = "six_iam_jwt";
 
 #define TOKEN_EXPIRATION_BUFFER_SECONDS 100
 
-
 char *_six_iam_create_jwt_content(const char *device_guid, const char *private_key);
 
 /*
@@ -307,10 +306,10 @@ bool six_iam_token_expired(const char *token, EXP_UNIT_T unit) {
 		time_t expiration = (time_t)exp->valuedouble;
 		time_t now = time(NULL);
 		long long now_time = (long long)now;
-		long long expiration_time = ((long long)expiration) / (unit == MilliSecond ? 1000 : 1) ;
+		long long expiration_time = ((long long)expiration) / (unit == MilliSecond ? 1000 : 1);
 		ESP_LOGD(TAG, "Current time (raw): %lld", now_time);
 		ESP_LOGD(TAG, "Expiration time (raw): %lld", expiration_time);
-		ESP_LOGD(TAG, "Time difference: %lld seconds",  (expiration_time - now_time));
+		ESP_LOGD(TAG, "Time difference: %lld seconds", (expiration_time - now_time));
 		is_expired = (now_time >= expiration_time - TOKEN_EXPIRATION_BUFFER_SECONDS);
 	}
 

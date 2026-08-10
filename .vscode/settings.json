@@ -69,5 +69,14 @@
     "--compile-commands-dir=d:\\workspace\\six-iot\\six-iot-sdk\\esp32\\six-iot-sdk\\build"
   ],
   "idf.currentSetup": "/Users/a0000/.espressif/v5.5.5/esp-idf",
-  "idf.port": "/dev/tty.wchusbserial1110"
+  "idf.port": "/dev/tty.wchusbserial1110",
+  "[c]": {
+      "editor.defaultFormatter": "xaver.clang-format",
+      "editor.formatOnSave": true
+  },
+  "[cpp]": {
+      "editor.defaultFormatter": "xaver.clang-format",
+      "editor.formatOnSave": true
+  },
+  "clang-format.executable": "/Users/a0000/.espressif/tools/esp-clang/esp-19.1.2_20250312/esp-clang/bin/clang-format"
 }

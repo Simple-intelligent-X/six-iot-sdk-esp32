@@ -192,7 +192,7 @@ void six_iot_reconnect_mqtt() {
 	}
 
 	// stop the client here instead of in six_iot_handle_mqtt_conn_error().
-	// six_iot_reconnect_mqtt() is invoked from the consumer of 
+	// six_iot_reconnect_mqtt() is invoked from the consumer of
 	// the SIX_IOT_EVENT/MQTT_DISCONNECTED event on s_six_iot_event_loop
 	if (client) {
 		esp_mqtt_client_stop(client);
@@ -240,7 +240,6 @@ static char *_get_error_msg(char *msg, esp_err_t err) {
 	return s_error_msg;
 }
 
-
 void _six_iot_update_s_mqtt_cfg_newpwd(char *new_password) {
 	if (NULL == new_password) {
 		six_defregment_heap(TAG);
@@ -266,7 +265,7 @@ void _six_iot_update_s_mqtt_cfg_newpwd(char *new_password) {
 			six_defregment_heap(TAG);
 			ESP_LOGE(TAG, "Failed to update config for mqtt client, err: %d", ret);
 			six_log_message(_get_error_msg("Failed to update config for mqtt client", ret));
-			//Destroy it so the next attempt can actually re-init from scratch.
+			// Destroy it so the next attempt can actually re-init from scratch.
 			s_destroy_mqtt_client();
 			s_set_mqtt_state(MQTT_CREATE_CLIENT_FAIL);
 			return;
@@ -385,7 +384,7 @@ static void s_mqtt_event_handler(void *handler_args, esp_event_base_t base, int3
 	}
 }
 
-//static const char *alpn_protos[] = {"mqtt", NULL};
+// static const char *alpn_protos[] = {"mqtt", NULL};
 
 void six_iot_start_mqtt(six_iot_config_t *iot_config, char *mqtt_endpoint, char *mqtt_clientid, char *mqtt_username,
 						char *mqtt_password, esp_event_loop_handle_t loop_handle,
@@ -420,9 +419,9 @@ void six_iot_start_mqtt(six_iot_config_t *iot_config, char *mqtt_endpoint, char 
 	s_current_mqtt_password = strdup(mqtt_password);
 	s_mqtt_cfg.credentials.username = CONFIG_AWS_IOT_USERNAME_WITH_AUTHORIZER;
 	s_mqtt_cfg.credentials.authentication.password = s_current_mqtt_password;
-	//s_mqtt_cfg.credentials.username = "username?x-amz-customauthorizer-name=six-iot-authorizer";
-	//s_mqtt_cfg.credentials.authentication.certificate = (const char*) device_cert_pem_start;
-	//s_mqtt_cfg.credentials.authentication.key = get_device_private_key(),
+	// s_mqtt_cfg.credentials.username = "username?x-amz-customauthorizer-name=six-iot-authorizer";
+	// s_mqtt_cfg.credentials.authentication.certificate = (const char*) device_cert_pem_start;
+	// s_mqtt_cfg.credentials.authentication.key = get_device_private_key(),
 	s_mqtt_cfg.broker.verification.certificate = (const char *)aws_root_ca_pem_start,
 	s_mqtt_cfg.broker.verification.certificate_len = aws_root_ca_pem_end - aws_root_ca_pem_start;
 #endif
@@ -490,10 +489,10 @@ void six_iot_watch_client() {
 	ESP_LOGD(TAG, "six_iot_watch_client event is triggered");
 	if (!s_mqtt_connected && s_mqtt_connected_once) {
 		six_defregment_heap(TAG);
-		
+
 		int64_t current_time = esp_timer_get_time() / 1000000;
 		int64_t elapsed_time = current_time - s_mqtt_disconnect_time_start;
-		//watchdog is triggered
+		// watchdog is triggered
 		if (elapsed_time >= MAX_DISCONNECT_TICKS_SECONDS) {
 			ESP_LOGE(TAG, "Watchdog triggered: MQTT disconnected for over %lld seconds. Forcing manual reconnect.",
 					 (long long)elapsed_time);

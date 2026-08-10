@@ -20,8 +20,7 @@ extern "C" {
 // 	esp_event_loop_handle_t loop_handle);
 
 // exchange the ID token and Access token for the device
-void six_iam_exchange_device_tokens(
-	six_iot_config_t *iot_config, esp_event_loop_handle_t loop_handle);
+void six_iam_exchange_device_tokens(six_iot_config_t *iot_config, esp_event_loop_handle_t loop_handle);
 
 // send the event for the intent to refresh the device tokens
 void six_iot_intent_refresh_device_tokens();

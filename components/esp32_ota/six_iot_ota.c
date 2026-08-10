@@ -1,9 +1,9 @@
-#include <stdio.h>
 #include <esp_event.h>
 #include <esp_http_client.h>
 #include <esp_https_ota.h>
 #include <esp_log.h>
 #include <esp_ota_ops.h>
+#include <stdio.h>
 
 #include "six_iot_ota.h"
 
@@ -31,8 +31,7 @@ static esp_err_t s_http_event_handler(esp_http_client_event_t *evt) {
 		ESP_LOGD(TAG, "HTTP_EVENT_HEADER_SENT");
 		break;
 	case HTTP_EVENT_ON_HEADER:
-		ESP_LOGD(TAG, "HTTP_EVENT_ON_HEADER, key=%s, value=%s", evt->header_key,
-				 evt->header_value);
+		ESP_LOGD(TAG, "HTTP_EVENT_ON_HEADER, key=%s, value=%s", evt->header_key, evt->header_value);
 		break;
 	case HTTP_EVENT_ON_DATA:
 		ESP_LOGD(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
@@ -54,10 +53,10 @@ void ota(char *url) {
 	esp_http_client_config_t config = {
 		.url = url,
 #ifdef CONFIG_SDK_OTA_REQ_DEFAULT_CA
-		.cert_pem = (const char*)six_ca_pem_start,
+		.cert_pem = (const char *)six_ca_pem_start,
 #endif
 #ifdef CONFIG_SDK_OTA_REQ_AWS_CA
-		.cert_pem = (const char*)aws_root_ca_pem_start,
+		.cert_pem = (const char *)aws_root_ca_pem_start,
 #endif
 		.event_handler = s_http_event_handler,
 		.keep_alive_enable = true,

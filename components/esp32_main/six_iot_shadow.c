@@ -6,23 +6,17 @@
 /**
  * Parse the shadow status
  */
-char *six_iot_parse_shadow_status(cJSON *json) {
-	return six_iot_parse_shadow_str_attr(json, "status");
-}
+char *six_iot_parse_shadow_status(cJSON *json) { return six_iot_parse_shadow_str_attr(json, "status"); }
 
 /**
  * Parse String attribute from the shadow JSON
  */
-char *six_iot_parse_shadow_str_attr(cJSON *json, char *attrName) {
-	return six_parse_json_str_attr(json, attrName);
-}
+char *six_iot_parse_shadow_str_attr(cJSON *json, char *attrName) { return six_parse_json_str_attr(json, attrName); }
 
 /**
  * Parse Object attribute from the shadow JSON
  */
-cJSON *six_iot_parse_shadow_obj_attr(cJSON *json, char *attrName) {
-	return six_parse_json_obj_attr(json, attrName);
-}
+cJSON *six_iot_parse_shadow_obj_attr(cJSON *json, char *attrName) { return six_parse_json_obj_attr(json, attrName); }
 
 /**
  *
@@ -53,8 +47,7 @@ cJSON *six_iot_parse_shadow_obj_attr(cJSON *json, char *attrName) {
   PingAccepted,
   GetAccepted,
  */
-char *six_iot_get_shadow_topic(char *productId, char *deviceGuid,
-						   six_iot_shadow_topic_t topicType) {
+char *six_iot_get_shadow_topic(char *productId, char *deviceGuid, six_iot_shadow_topic_t topicType) {
 	int topicLength = 0;
 	char *topicSeg1 = NULL;
 	char *topicSeg2 = NULL;
@@ -118,9 +111,8 @@ char *six_iot_get_shadow_topic(char *productId, char *deviceGuid,
 	if (topicSeg2) {
 		topicLength += strlen(topicSeg2) + 1;
 	}
-	char *topic = calloc(strlen(productId) + 1 + strlen(deviceGuid) + 1 +
-							 strlen("shadow") + 1 + topicLength,
-						 sizeof(char));
+	char *topic =
+		calloc(strlen(productId) + 1 + strlen(deviceGuid) + 1 + strlen("shadow") + 1 + topicLength, sizeof(char));
 	strcat(topic, productId);
 	strcat(topic, "/");
 	strcat(topic, deviceGuid);
@@ -139,9 +131,7 @@ char *six_iot_get_shadow_topic(char *productId, char *deviceGuid,
 
 char *six_iot_get_general_topic(char *productId, char *deviceGuid, char *subTopic) {
 	int topicLength = strlen(subTopic) + 1;
-	char *topic =
-		calloc(strlen(productId) + 1 + strlen(deviceGuid) + 1 + topicLength,
-			   sizeof(char));
+	char *topic = calloc(strlen(productId) + 1 + strlen(deviceGuid) + 1 + topicLength, sizeof(char));
 	strcat(topic, productId);
 	strcat(topic, "/");
 	strcat(topic, deviceGuid);
