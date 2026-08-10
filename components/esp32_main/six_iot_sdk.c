@@ -235,12 +235,12 @@ void six_iot_event_handler(void *event_handler_arg, esp_event_base_t event_base,
 		// principal(e.g. APP user)
 		if (s_user_global_uuid != NULL && s_device_tokens.access_token != NULL) {
 #ifdef CONFIG_ESP32_PROV_BLUFI
-			six_iot_bind_device(&s_iot_cfg, s_user_global_uuid, s_device_tokens.access_token,
-								six_iot_sdk_event_loop_handle);
+			// six_iot_bind_device(&s_iot_cfg, s_user_global_uuid, s_device_tokens.access_token,
+			// 					six_iot_sdk_event_loop_handle);
 #endif
 #ifdef CONFIG_ESP32_PROV_SOFTAP
-			six_iot_bind_device(&s_iot_cfg, s_user_global_uuid, s_device_tokens.access_token,
-								six_iot_sdk_event_loop_handle);
+			// six_iot_bind_device(&s_iot_cfg, s_user_global_uuid, s_device_tokens.access_token,
+			// 					six_iot_sdk_event_loop_handle);
 #endif
 			free(s_device_tokens.access_token);
 			s_device_tokens.access_token = NULL;
@@ -259,12 +259,12 @@ void six_iot_event_handler(void *event_handler_arg, esp_event_base_t event_base,
 		// principal(e.g. APP user)
 		if (s_user_global_uuid != NULL && s_device_tokens.access_token != NULL) {
 #ifdef CONFIG_ESP32_PROV_BLUFI
-			six_iot_bind_device(&s_iot_cfg, s_user_global_uuid, s_device_tokens.access_token,
-								six_iot_sdk_event_loop_handle);
+			// six_iot_bind_device(&s_iot_cfg, s_user_global_uuid, s_device_tokens.access_token,
+			// 					six_iot_sdk_event_loop_handle);
 #endif
 #ifdef CONFIG_ESP32_PROV_SOFTAP
-			six_iot_bind_device(&s_iot_cfg, s_user_global_uuid, s_device_tokens.access_token,
-								six_iot_sdk_event_loop_handle);
+			// six_iot_bind_device(&s_iot_cfg, s_user_global_uuid, s_device_tokens.access_token,
+			// 					six_iot_sdk_event_loop_handle);
 #endif
 			free(s_device_tokens.access_token);
 			s_device_tokens.access_token = NULL;

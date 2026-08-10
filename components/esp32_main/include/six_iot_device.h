@@ -17,19 +17,7 @@ extern "C" {
 
 // void six_iot_bind_device(
 // 	six_iot_config_t *iot_config, char *user_global_uuid, char *access_token,
-// 	esp_event_loop_handle_t loop_handle,
-// 	six_iot_provision_status_handler_t status_handler,
-// 	six_iot_bind_device_result_handler_t bind_device_handler);
-
-// // exchange the ID token and Access token for the device
-// void six_iam_exchange_device_tokens(
-// 	six_iot_config_t *iot_config, esp_event_loop_handle_t loop_handle,
-// 	six_iot_provision_status_handler_t status_handler,
-// 	six_iot_bind_device_result_handler_t bind_device_handler);
-
-void six_iot_bind_device(
-	six_iot_config_t *iot_config, char *user_global_uuid, char *access_token,
-	esp_event_loop_handle_t loop_handle);
+// 	esp_event_loop_handle_t loop_handle);
 
 // exchange the ID token and Access token for the device
 void six_iam_exchange_device_tokens(
