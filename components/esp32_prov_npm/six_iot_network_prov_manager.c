@@ -66,10 +66,11 @@ static void s_report_provision_status(six_iot_event_t status, char *msg, void *a
 		if ((status == PROVISION_STATUS_AS_STA_CONN_TO_AP_SUCCEED || status == PROVISION_STATUS_BIND_DEVICE_REC_CMD) &&
 			args) {
 			char *data = args;
-			int size = sizeof(char) * (strlen(data) + 1);
+			size_t size = strlen(data) + 1U;
 			esp_event_post_to(s_six_iot_loop, SIX_IOT_EVENT, status, data, size, 100 / portTICK_PERIOD_MS);
 		} else {
-			esp_event_post_to(s_six_iot_loop, SIX_IOT_EVENT, status, args, sizeof(args), 100 / portTICK_PERIOD_MS);
+			size_t size = args ? strlen((const char *)args) + 1U : 0U;
+			esp_event_post_to(s_six_iot_loop, SIX_IOT_EVENT, status, args, size, 100 / portTICK_PERIOD_MS);
 		}
 	}
 }
@@ -396,17 +397,8 @@ esp_err_t cloud_user_assoc_handler(uint32_t session_id, const uint8_t *inbuf, ss
 		}
 		ESP_LOGD(TAG, "cloud_user_assoc_handler: received challenge=%s", challenge);
 		/* Post the bind-device event so main SDK can handle the bind request */
-		char *challenge_dup = strdup(challenge);
-		if (challenge_dup) {
-			s_report_provision_status(PROVISION_STATUS_BIND_DEVICE_REQ_CHALLENGE_CMD, "App request binding challenge",
-									  challenge_dup);
-			free(challenge_dup);
-		} else {
-			ESP_LOGE(TAG, "cloud_user_assoc_handler: strdup failed");
-			resp.status = COM__SIX__IOT__SIX_CONFIG_STATUS__InvalidParam;
-			ret = ESP_ERR_NO_MEM;
-			goto flush_resp;
-		}
+		s_report_provision_status(PROVISION_STATUS_BIND_DEVICE_REQ_CHALLENGE_CMD, "App request binding challenge",
+								  challenge);
 
 		char *private_key_pem = get_device_private_key();
 		if (!private_key_pem) {
