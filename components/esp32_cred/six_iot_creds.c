@@ -53,41 +53,6 @@ char *get_device_guid() { return get_network_prov_field("deviceGuid"); }
 
 char *get_device_product_id() { return get_network_prov_field("productId"); }
 
-// char* get_device_guid() {
-//     esp_err_t err;
-//     nvs_handle_t my_handle;
-//     char *guid_buf = NULL;
-
-//     // Open the "creds" namespace
-//     err = nvs_open_from_partition(CREDENTIALS_PARTITION, "creds", NVS_READONLY, &my_handle);
-//     if (err != ESP_OK) {
-//         ESP_LOGE(TAG, "Error (%s) opening NVS handle for 'creds'", esp_err_to_name(err));
-//         return NULL;
-//     }
-
-//     size_t guid_len = 0;
-
-//     // 1. Get required size
-//     err = nvs_get_str(my_handle, "device_guid", NULL, &guid_len);
-
-//     if (err == ESP_OK) {
-//         // 2. Allocate memory on the heap
-//         guid_buf = (char *)malloc(guid_len);
-//         if (guid_buf) {
-//             // 3. Retrieve the string
-//             nvs_get_str(my_handle, "device_guid", guid_buf, &guid_len);
-//             ESP_LOGI(TAG, "GUID loaded: %s", guid_buf);
-//         } else {
-//             ESP_LOGE(TAG, "Failed to allocate memory for GUID.");
-//         }
-//     } else {
-//         ESP_LOGE(TAG, "Failed to read device_guid (Error: %s)", esp_err_to_name(err));
-//     }
-
-//     nvs_close(my_handle);
-//     return guid_buf; // Returns NULL on failure, or a pointer to the GUID on success
-// }
-
 char *get_network_prov_field(const char *field_name) {
 	esp_err_t err;
 	nvs_handle_t my_handle;

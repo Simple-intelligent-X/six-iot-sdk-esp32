@@ -137,7 +137,6 @@ static esp_err_t example_get_sec2_salt(const char **salt, uint16_t *salt_len) {
 	*salt_len = sizeof(sec2_salt);
 	return ESP_OK;
 #elif CONFIG_EXAMPLE_PROV_SEC2_PROD_MODE
-	// const char *nvs_salt_hex = "036EE0C7BCB9EDA84C9EAC97D93DECF4";
 	char *nvs_salt_hex = get_network_prov_field(SEC2_SALT_KEY);
 	if (!nvs_salt_hex) {
 		ESP_LOGE(TAG, "Failed to get salt!");
@@ -171,9 +170,6 @@ static esp_err_t example_get_sec2_verifier(const char **verifier, uint16_t *veri
 	*verifier_len = sizeof(sec2_verifier);
 	return ESP_OK;
 #elif CONFIG_EXAMPLE_PROV_SEC2_PROD_MODE
-	/* This code needs to be updated with appropriate implementation to provide verifier */
-	// const char *nvs_verifier_hex =
-	// "7C7C85476508946DD636AF37D7E8914378CFFD616C59D2F83908127238DE9E24A470261CDFA903C2B270E7B13224DA111D9718DC607208CC9AC90C4827E2AE89AA1625B804D21A9B3A8F37F6E43A712EE127866EADCE28FF5446601FB99687DC5740A7D46CC97754DC1682F0ED356AC470AD3D90B5819470D7BC65B2D518E02EC3A5F968DD647BB8B73C9CFC00D8717EB79A7CB1B7C2C318342932433E0099E98294E3D82AB09629B7DF0E5F08334076529132009F972C896C391EC8280544173F68028A9F4461D1F5A17E5A70D2C72381CB3868E42C20BC40577617BD08B896BC26EB32466935058C1570D91BE9BECCA938A667F0AD5013197264BF52C234E21B11797472BD345BB1E2FD6673FE716474D04EBC51241940870E9240E621E72D4E37762F2EE268C789E8321342068484534AB30C1B4C8D1C519719ABAE77FFDBECF0109534336BCB3E840FB9D85FB8A0B855533E70F718F5CE7B4EBF27CECEA8B3BE40C5C532293E71649EDE8CF675A1E6F653C831A878DE5040F762DE36B2BA";
 	char *nvs_verifier_hex = get_network_prov_field(SEC2_VERIFIER_KEY);
 	if (!nvs_verifier_hex) {
 		ESP_LOGE(TAG, "Failed to get verifier!");
@@ -521,13 +517,6 @@ const wifi_prov_event_handler_t wifi_prov_event_handler = {
 #endif /* EXAMPLE_PROV_ENABLE_APP_CALLBACK */
 
 static void _six_iot_init_network_prov_manager(wifi_ap_config_t *ap_config) {
-
-	// ESP_LOGI(TAG, "Initializing Network Provisioning Manager");
-	// ESP_LOGI(TAG, "salt: %s", get_network_prov_field(SEC2_SALT_KEY));
-	// ESP_LOGI(TAG, "verifier: %s", get_network_prov_field(SEC2_VERIFIER_KEY));
-	// ESP_LOGI(TAG, "username: %s", get_network_prov_field(SEC2_USERNAME_KEY));
-	// ESP_LOGI(TAG, "pop: %s", get_network_prov_field(SEC2_PWD_KEY));
-	// return;
 	/* Initialize TCP/IP */
 	ESP_ERROR_CHECK(esp_netif_init());
 
@@ -652,8 +641,6 @@ static void _six_iot_init_network_prov_manager(wifi_ap_config_t *ap_config) {
 		 * e.g. QR code sticker */
 		char *username = get_network_prov_field(SEC2_USERNAME_KEY);
 		char *pop = get_network_prov_field(SEC2_PWD_KEY);
-		// const char *username = "wifiprov";
-		// const char *pop = "abcd1234";
 #endif
 		/* This is the structure for passing security parameters
 		 * for the protocomm security 2.
@@ -764,6 +751,4 @@ void six_iot_start_network_prov_manager_mode(six_iot_config_t *iot_config, wifi_
 	s_six_iot_loop = loop_handle;
 	s_report_provision_status(PROVISION_STATUS_START_DEVICE_IN_BLUFI_MODE, "Start the device in blufi mode", NULL);
 	_six_iot_init_network_prov_manager(config);
-	// initialise the module in STA module
-	//_initialise_wifi(WIFI_MODE_STA);
 }
