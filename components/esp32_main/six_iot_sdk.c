@@ -4,7 +4,6 @@
  *  Created on: 2023年7月22日
  *      Author: Stephen Yu
  */
-#include <string.h>
 #include <cJson.h>
 #include <esp_err.h>
 #include <esp_event.h>
@@ -15,6 +14,7 @@
 #include <esp_wifi.h>
 #include <mqtt_client.h>
 #include <nvs_flash.h>
+#include <string.h>
 
 #ifdef CONFIG_ESP32_PROV_SOFTAP
 #include "six_iot_prov_softap.h"
@@ -29,6 +29,7 @@
 
 #include "six_iam_jwt.h"
 #include "six_iot_config.h"
+#include "six_iot_creds.h"
 #include "six_iot_device.h"
 #include "six_iot_log.h"
 #include "six_iot_mqtt.h"
@@ -36,7 +37,6 @@
 #include "six_iot_sdk.h"
 #include "six_iot_shadow.h"
 #include "six_iot_util.h"
-#include "six_iot_creds.h"
 
 static const char *TAG = "six_iot_sdk";
 
@@ -54,7 +54,7 @@ static esp_event_loop_handle_t six_iot_sdk_event_loop_handle = NULL;
 
 // ADDITIONS FOR LOG UPLOAD TASK
 #define LOG_UPLOAD_TASK_NAME "LogUploadTask"
-#define LOG_UPLOAD_TASK_STACK_SIZE (1024 * 6) // Needs large stack for file ops/network
+#define LOG_UPLOAD_TASK_STACK_SIZE (1024 * 6)			  // Needs large stack for file ops/network
 #define LOG_UPLOAD_TASK_PRIORITY configMAX_PRIORITIES - 3 // Lower priority than Event Loop
 #define LOG_UPLOAD_QUEUE_LENGTH 10
 static TaskHandle_t log_upload_task_handle = NULL;
@@ -104,8 +104,8 @@ static six_iot_config_t s_iot_cfg = {
 	iam : {device_guid : NULL, token_endpoint : CONFIG_SDK_TOKEN_ENDPOINT},
 	mqtt_endpoint : CONFIG_SDK_MQTT_ENDPOINT,
 	mqtt_handler : six_iot_mqtt_handler,
-	//iot_product_id : CONFIG_SDK_PRODUCT_ID,
-	iot_product_id: NULL,
+	// iot_product_id : CONFIG_SDK_PRODUCT_ID,
+	iot_product_id : NULL,
 	iot_bind_device_endpoint : CONFIG_SDK_BIND_DEVICE_ENDPOINT,
 	iot_log_endpoint : CONFIG_SDK_LOG_ENDPOINT
 };
@@ -125,20 +125,20 @@ static wifi_ap_config_t s_softap_cfg = {
 
 // The actual task function
 static void log_upload_task(void *pvParameters) {
-    ESP_LOGI(TAG, "Log Upload Task started.");
-    uint8_t notification_data;
+	ESP_LOGI(TAG, "Log Upload Task started.");
+	uint8_t notification_data;
 
-    while (1) {
-        // Wait for the timer to signal a LOG_UPLOAD_REQ
-        if (xQueueReceive(log_upload_queue, &notification_data, portMAX_DELAY) == pdPASS) {
-            // Log upload event received. Execute the blocking operation.
-            // This function is now executing in a separate task and will not block
-            // the SixIotSdkEventLoopTask.
-            six_log_upload();
-        }
-    }
-    // Task should never exit but included for completeness
-    vTaskDelete(NULL);
+	while (1) {
+		// Wait for the timer to signal a LOG_UPLOAD_REQ
+		if (xQueueReceive(log_upload_queue, &notification_data, portMAX_DELAY) == pdPASS) {
+			// Log upload event received. Execute the blocking operation.
+			// This function is now executing in a separate task and will not block
+			// the SixIotSdkEventLoopTask.
+			six_log_upload();
+		}
+	}
+	// Task should never exit but included for completeness
+	vTaskDelete(NULL);
 }
 
 void six_iot_init_sntp() {
@@ -195,7 +195,7 @@ void six_iot_event_handler(void *event_handler_arg, esp_event_base_t event_base,
 		six_iam_exchange_device_tokens(&s_iot_cfg, six_iot_sdk_event_loop_handle);
 #endif
 
-#if defined(CONFIG_ESP32_PROV_BLUFI) || defined(CONFIG_ESP32_NETWORK_PROV_MANAGER)  
+#if defined(CONFIG_ESP32_PROV_BLUFI) || defined(CONFIG_ESP32_NETWORK_PROV_MANAGER)
 		six_iam_exchange_device_tokens(&s_iot_cfg, six_iot_sdk_event_loop_handle);
 #endif
 		break;
@@ -235,12 +235,12 @@ void six_iot_event_handler(void *event_handler_arg, esp_event_base_t event_base,
 		// principal(e.g. APP user)
 		if (s_user_global_uuid != NULL && s_device_tokens.access_token != NULL) {
 #ifdef CONFIG_ESP32_PROV_BLUFI
-			six_iot_bind_device(&s_iot_cfg, s_user_global_uuid, s_device_tokens.access_token,
-								six_iot_sdk_event_loop_handle);
+			// six_iot_bind_device(&s_iot_cfg, s_user_global_uuid, s_device_tokens.access_token,
+			// 					six_iot_sdk_event_loop_handle);
 #endif
 #ifdef CONFIG_ESP32_PROV_SOFTAP
-			six_iot_bind_device(&s_iot_cfg, s_user_global_uuid, s_device_tokens.access_token,
-								six_iot_sdk_event_loop_handle);
+			// six_iot_bind_device(&s_iot_cfg, s_user_global_uuid, s_device_tokens.access_token,
+			// 					six_iot_sdk_event_loop_handle);
 #endif
 			free(s_device_tokens.access_token);
 			s_device_tokens.access_token = NULL;
@@ -259,12 +259,12 @@ void six_iot_event_handler(void *event_handler_arg, esp_event_base_t event_base,
 		// principal(e.g. APP user)
 		if (s_user_global_uuid != NULL && s_device_tokens.access_token != NULL) {
 #ifdef CONFIG_ESP32_PROV_BLUFI
-			six_iot_bind_device(&s_iot_cfg, s_user_global_uuid, s_device_tokens.access_token,
-								six_iot_sdk_event_loop_handle);
+			// six_iot_bind_device(&s_iot_cfg, s_user_global_uuid, s_device_tokens.access_token,
+			// 					six_iot_sdk_event_loop_handle);
 #endif
 #ifdef CONFIG_ESP32_PROV_SOFTAP
-			six_iot_bind_device(&s_iot_cfg, s_user_global_uuid, s_device_tokens.access_token,
-								six_iot_sdk_event_loop_handle);
+			// six_iot_bind_device(&s_iot_cfg, s_user_global_uuid, s_device_tokens.access_token,
+			// 					six_iot_sdk_event_loop_handle);
 #endif
 			free(s_device_tokens.access_token);
 			s_device_tokens.access_token = NULL;
@@ -283,7 +283,7 @@ void six_iot_event_handler(void *event_handler_arg, esp_event_base_t event_base,
 		six_iot_handle_mqtt_conn_error();
 		break;
 	case LOG_UPLOAD_REQ:
-		//six_log_upload();
+		// six_log_upload();
 		ESP_LOGW(TAG, "Received deprecated LOG_UPLOAD_REQ event. Skipping.");
 		break;
 	case PROVISION_STATUS_BIND_DEVICE_OK:
@@ -344,18 +344,18 @@ void run_six_iot_sdk_main_task() {
 	ESP_ERROR_CHECK(ret);
 
 	// --- ADDITION: Initialize Log Upload Queue and Task ---
-    log_upload_queue = xQueueCreate(LOG_UPLOAD_QUEUE_LENGTH, sizeof(uint8_t));
-    if (log_upload_queue == NULL) {
-        ESP_LOGE(TAG, "Failed to create Log Upload Queue!");
-        return;
-    }
+	log_upload_queue = xQueueCreate(LOG_UPLOAD_QUEUE_LENGTH, sizeof(uint8_t));
+	if (log_upload_queue == NULL) {
+		ESP_LOGE(TAG, "Failed to create Log Upload Queue!");
+		return;
+	}
 
-    if (xTaskCreate(log_upload_task, LOG_UPLOAD_TASK_NAME, LOG_UPLOAD_TASK_STACK_SIZE, 
-                    NULL, LOG_UPLOAD_TASK_PRIORITY, &log_upload_task_handle) != pdPASS) {
-        ESP_LOGE(TAG, "Failed to create Log Upload Task!");
-        return;
-    }
-    // --- END ADDITION ---	
+	if (xTaskCreate(log_upload_task, LOG_UPLOAD_TASK_NAME, LOG_UPLOAD_TASK_STACK_SIZE, NULL, LOG_UPLOAD_TASK_PRIORITY,
+					&log_upload_task_handle) != pdPASS) {
+		ESP_LOGE(TAG, "Failed to create Log Upload Task!");
+		return;
+	}
+	// --- END ADDITION ---
 
 	_six_init_sdk_timer();
 
@@ -385,10 +385,10 @@ void run_six_iot_sdk_main_task() {
 
 // main entry point
 void six_iot_run_sdk(void) {
-	//if SDK user select to has a clean start, then 
-	#ifdef CONFIG_FACTORY_RESET
-		six_iot_factory_reset();
-	#endif
+// if SDK user select to has a clean start, then
+#ifdef CONFIG_FACTORY_RESET
+	six_iot_factory_reset();
+#endif
 	six_nvs_init_storage();
 	nvs_flash_init_partition(CREDENTIALS_PARTITION);
 	s_iot_cfg.iam.device_guid = get_device_guid();
@@ -407,7 +407,7 @@ void _sdk_timer_callback(void *arg) {
 		// 				 LOG_UPLOAD_REQ_EVENT_DELAY);
 
 		// --- MODIFIED SECTION ---
-        // Post to the Log Upload Task's queue instead of the Event Loop
+		// Post to the Log Upload Task's queue instead of the Event Loop
 		uint8_t msg = 1;
 		UBaseType_t free_slots = uxQueueSpacesAvailable(log_upload_queue);
 		if (free_slots > 0) {
@@ -419,18 +419,18 @@ void _sdk_timer_callback(void *arg) {
 		} else {
 			ESP_LOGW(TAG, "Log Upload queue is full (len=%d). Skipping upload tick.", LOG_UPLOAD_QUEUE_LENGTH);
 		}
-        // --- END MODIFIED SECTION ---
+		// --- END MODIFIED SECTION ---
 	}
 
 	if (s_sdk_timer_tick % MQTT_CLIENT_TIMER_TICKS == 0) {
 		ESP_LOGD(TAG, "Posting MQTT_CLIENT_WATCH_DOG event (tick %lu)", s_sdk_timer_tick);
 		esp_err_t ret = esp_event_post_to(six_iot_sdk_event_loop_handle, SIX_IOT_EVENT, MQTT_CLIENT_WATCH_DOG, NULL, 0,
-						  MQTT_CLIENT_WATCH_DOG_EVENT_DELAY);
+										  MQTT_CLIENT_WATCH_DOG_EVENT_DELAY);
 		if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to post MQTT_CLIENT_WATCH_DOG event: %s", esp_err_to_name(ret));
-        } else {
-            ESP_LOGD(TAG, "MQTT_CLIENT_WATCH_DOG event posted successfully");
-        }
+			ESP_LOGE(TAG, "Failed to post MQTT_CLIENT_WATCH_DOG event: %s", esp_err_to_name(ret));
+		} else {
+			ESP_LOGD(TAG, "MQTT_CLIENT_WATCH_DOG event posted successfully");
+		}
 	}
 }
 
@@ -441,48 +441,48 @@ void _six_init_sdk_timer() {
 	esp_timer_start_periodic(s_sdk_timer, SDK_TIMER_INTERVAL); // microseconds
 }
 
-
 void six_iot_factory_reset() {
-    esp_err_t err;
-    
-    ESP_LOGW(TAG, "--- STARTING FACTORY RESET PROCEDURE ---");
-    // 1. Initialize the target partition if it hasn't been already.
-    // This is necessary to ensure the NVS driver can access the partition metadata.
-    err = nvs_flash_init_partition(NVS_PARTITION_TO_WIPE);
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        // If init fails, we attempt to erase anyway, assuming a configuration issue.
-        ESP_LOGW(TAG, "Target partition failed initial integrity check. Proceeding with erase.");
-    } else if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize target NVS partition (%s). Aborting reset.", esp_err_to_name(err));
-        return;
-    }
+	esp_err_t err;
 
-    // 2. Erase the ENTIRE content of the target NVS partition ('nvs')
-    ESP_LOGW(TAG, "Erasing ALL data from partition: %s...", NVS_PARTITION_TO_WIPE);
-    err = nvs_flash_erase_partition(NVS_PARTITION_TO_WIPE);
-    
-    if (err == ESP_OK) {
-        ESP_LOGI(TAG, "Partition '%s' successfully erased.", NVS_PARTITION_TO_WIPE);
-    } else {
-        ESP_LOGE(TAG, "Failed to erase partition '%s' (Error: %s).", NVS_PARTITION_TO_WIPE, esp_err_to_name(err));
-        // You might still want to reboot even if the erase failed, depending on the error.
-    }
+	ESP_LOGW(TAG, "--- STARTING FACTORY RESET PROCEDURE ---");
+	// 1. Initialize the target partition if it hasn't been already.
+	// This is necessary to ensure the NVS driver can access the partition metadata.
+	err = nvs_flash_init_partition(NVS_PARTITION_TO_WIPE);
+	if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+		// If init fails, we attempt to erase anyway, assuming a configuration issue.
+		ESP_LOGW(TAG, "Target partition failed initial integrity check. Proceeding with erase.");
+	} else if (err != ESP_OK) {
+		ESP_LOGE(TAG, "Failed to initialize target NVS partition (%s). Aborting reset.", esp_err_to_name(err));
+		return;
+	}
 
-    // 3. Optional: Verify that the credentials partition (nvs_fact) is untouched.
-    // This step is often skipped in production code but confirms isolation.
-    err = nvs_flash_init_partition(CREDENTIALS_PARTITION);
-    if (err == ESP_OK) {
-        ESP_LOGI(TAG, "Verified that credentials partition '%s' is intact.", CREDENTIALS_PARTITION);
-        nvs_flash_deinit_partition(CREDENTIALS_PARTITION); // De-initialize the partition gracefully
-    } else {
-        ESP_LOGE(TAG, "Failed to initialize credentials partition '%s' for verification (Error: %s).", CREDENTIALS_PARTITION, esp_err_to_name(err));
-    }
-    
-    // 4. De-initialize the erased partition
-    nvs_flash_deinit_partition(NVS_PARTITION_TO_WIPE);
-    
-    // 5. Reboot the program
-    ESP_LOGW(TAG, "NVS cleanup complete. Rebooting system now...");
-    vTaskDelay(pdMS_TO_TICKS(100)); // Short delay to allow logs to flush
-    //esp_restart();
+	// 2. Erase the ENTIRE content of the target NVS partition ('nvs')
+	ESP_LOGW(TAG, "Erasing ALL data from partition: %s...", NVS_PARTITION_TO_WIPE);
+	err = nvs_flash_erase_partition(NVS_PARTITION_TO_WIPE);
+
+	if (err == ESP_OK) {
+		ESP_LOGI(TAG, "Partition '%s' successfully erased.", NVS_PARTITION_TO_WIPE);
+	} else {
+		ESP_LOGE(TAG, "Failed to erase partition '%s' (Error: %s).", NVS_PARTITION_TO_WIPE, esp_err_to_name(err));
+		// You might still want to reboot even if the erase failed, depending on the error.
+	}
+
+	// 3. Optional: Verify that the credentials partition (nvs_fact) is untouched.
+	// This step is often skipped in production code but confirms isolation.
+	err = nvs_flash_init_partition(CREDENTIALS_PARTITION);
+	if (err == ESP_OK) {
+		ESP_LOGI(TAG, "Verified that credentials partition '%s' is intact.", CREDENTIALS_PARTITION);
+		nvs_flash_deinit_partition(CREDENTIALS_PARTITION); // De-initialize the partition gracefully
+	} else {
+		ESP_LOGE(TAG, "Failed to initialize credentials partition '%s' for verification (Error: %s).",
+				 CREDENTIALS_PARTITION, esp_err_to_name(err));
+	}
+
+	// 4. De-initialize the erased partition
+	nvs_flash_deinit_partition(NVS_PARTITION_TO_WIPE);
+
+	// 5. Reboot the program
+	ESP_LOGW(TAG, "NVS cleanup complete. Rebooting system now...");
+	vTaskDelay(pdMS_TO_TICKS(100)); // Short delay to allow logs to flush
+									// esp_restart();
 }

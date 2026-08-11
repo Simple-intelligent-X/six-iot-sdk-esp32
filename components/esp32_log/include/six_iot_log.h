@@ -8,11 +8,11 @@ extern "C" {
 #include "six_iot_config.h"
 
 typedef enum {
-    LOG_WRITE_OK = 0,
-    LOG_MUTEX_NOT_INIT,
-    LOG_MUTEX_GET_FAIL,
-    LOG_OPEN_WRITING_FILE_FAIL,
-    LOG_QUEUE_FULL,
+	LOG_WRITE_OK = 0,
+	LOG_MUTEX_NOT_INIT,
+	LOG_MUTEX_GET_FAIL,
+	LOG_OPEN_WRITING_FILE_FAIL,
+	LOG_QUEUE_FULL,
 } six_iot_log_write_result_t;
 
 /**
