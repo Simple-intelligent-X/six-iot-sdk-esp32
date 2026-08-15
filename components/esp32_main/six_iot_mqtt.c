@@ -76,8 +76,6 @@ static char *s_iot_sdk_ping_topic = NULL;
 static char *s_iot_sdk_lwt_topic = NULL;
 static char *s_iot_sdk_log_topic = NULL;
 
-static char unique_client_id[64];
-
 static six_iot_config_t *s_iot_cfg;
 
 static esp_mqtt_client_handle_t client = NULL;
@@ -112,7 +110,6 @@ static char s_log_buffer[LOG_BUFFER_SIZE];
 static char s_error_msg[256];
 
 static char *s_current_mqtt_password = NULL;
-static char *s_current_aws_mqtt_username = NULL;
 
 // fed from xTaskGetTickCount()/1000 which silently
 // assumed a 1ms tick period. Now stores whole seconds derived from
@@ -121,13 +118,6 @@ static int64_t s_mqtt_disconnect_time_start = 0;
 #define MAX_DISCONNECT_TICKS_SECONDS 60
 
 static SemaphoreHandle_t s_mqtt_state_mutex = NULL;
-
-static void s_log_error_if_nonzero(const char *message, int error_code) {
-	if (error_code != 0) {
-		ESP_LOGE(TAG, "Last error %s: 0x%x", message, error_code);
-		six_log_message(message);
-	}
-}
 
 // centralize client teardown so every failure path can safely
 // destroy a half-initialized client instead of leaking it and leaving
