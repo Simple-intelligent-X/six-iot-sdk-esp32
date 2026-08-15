@@ -127,13 +127,14 @@ six_iot_log_write_result_t six_log_message(const char *message) {
 		return LOG_MUTEX_NOT_INIT;
 	}
 
-	char buf[MAX_LOG_MSG_LENGTH + 1];
 	if (message == NULL) {
-		buf[0] = '\0';
-	} else {
-		strncpy(buf, message, MAX_LOG_MSG_LENGTH);
-		buf[MAX_LOG_MSG_LENGTH] = '\0';
+		ESP_LOGW(TAG, "Attempted to log a NULL message, skipping");
+		return LOG_WRITE_OK; // Consider NULL message as a no-op
 	}
+
+	char buf[MAX_LOG_MSG_LENGTH + 1];
+	strncpy(buf, message, MAX_LOG_MSG_LENGTH);
+	buf[MAX_LOG_MSG_LENGTH] = '\0';
 
 	// Non-blocking enqueue: if queue is full, drop the message to avoid blocking caller
 	if (xQueueSend(s_log_queue, buf, 0) != pdPASS) {
@@ -188,12 +189,12 @@ static int _get_next_log_idx() {
 	return next_idx;
 }
 
-static void _clean_open_file() {
-	if (s_open_log_file) {
+static void _clean_open_file(void) {
+	if (s_open_log_file != NULL) {
 		fclose(s_open_log_file);
+		s_open_log_file = NULL;
 	}
-	s_open_log_file = NULL;
-	memset(s_open_file_name, 0, MAX_FILE_PATH_LEN);
+	s_open_file_name[0] = '\0';
 }
 
 static bool _is_file_path_ends_with_name(const char *file_path, const char *name) {
@@ -287,41 +288,41 @@ static void _six_log_upload() {
 			}
 
 			// Get file size
-			fseek(f, 0, SEEK_END);
+			if (fseek(f, 0, SEEK_END) != 0) {
+				ESP_LOGE(TAG, "Failed to seek to end of log file: %s", file_path);
+				fclose(f);
+				continue;
+			}
+
 			long fsize = ftell(f);
-			fseek(f, 0, SEEK_SET);
+
+			if (fsize < 0) {
+				ESP_LOGE(TAG, "Failed to get size of log file: %s", file_path);
+				fclose(f);
+				continue;
+			}
+
+			if (fseek(f, 0, SEEK_SET) != 0) {
+				ESP_LOGE(TAG, "Failed to seek to beginning of log file: %s", file_path);
+				fclose(f);
+				continue;
+			}
 
 			if (fsize > 0) {
-				// Buffer holds sizeof(s_uploading_file_buffer)-1 bytes of content
-				// plus a null terminator. Reject anything that would overflow it —
-				// this also self-heals a corrupted/oversized SPIFFS file instead
-				// of crash-looping on it forever.
-				if ((size_t)fsize >= sizeof(s_uploading_file_buffer)) {
-					ESP_LOGE(TAG, "Log file %s too large or corrupt (%ld bytes, max %u) — discarding", file_path, fsize,
-							 (unsigned)sizeof(s_uploading_file_buffer) - 1);
-					fclose(f);
-					if (unlink(file_path) != 0) {
-						ESP_LOGE(TAG, "Failed to delete oversized/corrupt file: %s", file_path);
-					}
-					if (_is_file_path_ends_with_name(s_open_file_name, filename_to_upload)) {
-						_clean_open_file();
-					}
-					continue;
-				}
-
+				size_t buffer_size = sizeof(s_uploading_file_buffer) - 1;
 				memset(s_uploading_file_buffer, 0, sizeof(s_uploading_file_buffer));
-				char *log_content = s_uploading_file_buffer;
 
-				size_t read_size = fread(log_content, 1, fsize, f);
-				if (read_size != fsize) {
-					ESP_LOGE(TAG, "Failed to read entire file: %s", file_path);
+				size_t read_size = fsize > buffer_size ? buffer_size : (size_t)fsize;
+				size_t actual_read = fread(s_uploading_file_buffer, 1, read_size, f);
+				if (actual_read != read_size) {
+					ESP_LOGE(TAG, "Failed to read log file: %s", file_path);
 					fclose(f);
 					continue;
 				}
+				s_uploading_file_buffer[actual_read] = '\0';
 
-				// Null-terminate the string
-				log_content[fsize] = 0;
 				fclose(f);
+				char *log_content = s_uploading_file_buffer;
 
 				ESP_LOGD(TAG, "s_open_file_name: %s, filename_to_upload: %s", s_open_file_name, filename_to_upload);
 				if (_is_file_path_ends_with_name(s_open_file_name, filename_to_upload)) {

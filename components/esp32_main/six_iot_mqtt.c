@@ -76,8 +76,6 @@ static char *s_iot_sdk_ping_topic = NULL;
 static char *s_iot_sdk_lwt_topic = NULL;
 static char *s_iot_sdk_log_topic = NULL;
 
-static char unique_client_id[64];
-
 static six_iot_config_t *s_iot_cfg;
 
 static esp_mqtt_client_handle_t client = NULL;
@@ -112,7 +110,6 @@ static char s_log_buffer[LOG_BUFFER_SIZE];
 static char s_error_msg[256];
 
 static char *s_current_mqtt_password = NULL;
-static char *s_current_aws_mqtt_username = NULL;
 
 // fed from xTaskGetTickCount()/1000 which silently
 // assumed a 1ms tick period. Now stores whole seconds derived from
@@ -121,13 +118,6 @@ static int64_t s_mqtt_disconnect_time_start = 0;
 #define MAX_DISCONNECT_TICKS_SECONDS 60
 
 static SemaphoreHandle_t s_mqtt_state_mutex = NULL;
-
-static void s_log_error_if_nonzero(const char *message, int error_code) {
-	if (error_code != 0) {
-		ESP_LOGE(TAG, "Last error %s: 0x%x", message, error_code);
-		six_log_message(message);
-	}
-}
 
 // centralize client teardown so every failure path can safely
 // destroy a half-initialized client instead of leaking it and leaving
@@ -194,19 +184,17 @@ void six_iot_reconnect_mqtt() {
 	// stop the client here instead of in six_iot_handle_mqtt_conn_error().
 	// six_iot_reconnect_mqtt() is invoked from the consumer of
 	// the SIX_IOT_EVENT/MQTT_DISCONNECTED event on s_six_iot_event_loop
-	if (client) {
-		esp_mqtt_client_stop(client);
-	}
+	s_destroy_mqtt_client();
 
 	char *id_token = six_nvs_read_id_token();
 	if (NULL != id_token && !six_iam_token_expired(id_token, Second)) {
-		ESP_LOGD(TAG, "Reconnect mqtt client with token in nvs");
+		ESP_LOGI(TAG, "Reconnect mqtt client with token in nvs");
 		six_log_message("Reconnect mqtt client with token in nvs");
 		_six_iot_request_new_token_handler(true, id_token, NULL);
 		free(id_token);
 	} else {
 		free(id_token);
-		ESP_LOGD(TAG, "Reqest the new token to reconnect the mqtt client");
+		ESP_LOGI(TAG, "Reqest the new token to reconnect the mqtt client");
 		six_log_message("Reqest the new token to reconnect the mqtt client");
 		// request the new id_token and set the callback handler
 		six_iot_refresh_device_tokens_with_handler(_six_iot_request_new_token_handler);
@@ -326,6 +314,9 @@ static void s_mqtt_event_handler(void *handler_args, esp_event_base_t base, int3
 		s_subscribe_update_delta_topic(base, event_id, event);
 		s_subscribe_ota_topic(base, event_id, event);
 		six_iot_publish_conn_online_msg();
+		// in case of MQTT_EVENT_CONNECTED, we will reset the s_mqtt_disconnect_time_start to 0, so that the watchdog
+		// will not trigger
+		s_mqtt_disconnect_time_start = esp_timer_get_time() / 1000000;
 		break;
 	case MQTT_EVENT_BEFORE_CONNECT:
 		ESP_LOGD(TAG, "MQTT try to connect");
