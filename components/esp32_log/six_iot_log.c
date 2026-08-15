@@ -189,12 +189,12 @@ static int _get_next_log_idx() {
 	return next_idx;
 }
 
-static void _clean_open_file() {
-	if (s_open_log_file) {
+static void _clean_open_file(void) {
+	if (s_open_log_file != NULL) {
 		fclose(s_open_log_file);
+		s_open_log_file = NULL;
 	}
-	s_open_log_file = NULL;
-	memset(s_open_file_name, 0, MAX_FILE_PATH_LEN);
+	s_open_file_name[0] = '\0';
 }
 
 static bool _is_file_path_ends_with_name(const char *file_path, const char *name) {
