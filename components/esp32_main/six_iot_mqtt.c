@@ -226,10 +226,10 @@ void six_iot_handle_mqtt_conn_error() {
 		return;
 	}
 	esp_err_t ret =
-		esp_event_post_to(s_six_iot_event_loop, SIX_IOT_EVENT, MQTT_DISCONNECTED, NULL, 0, MQTT_DISCONNECT_EVENT_DELAY);
+		esp_event_post_to(s_six_iot_event_loop, SIX_IOT_EVENT, MQTT_CONN_ERR, NULL, 0, MQTT_DISCONNECT_EVENT_DELAY);
 	if (ret != ESP_OK) {
-		ESP_LOGE(TAG, "Failed to post MQTT_DISCONNECTED event: %s", esp_err_to_name(ret));
-		six_log_message("Failed to post MQTT_DISCONNECTED event");
+		ESP_LOGE(TAG, "Failed to post MQTT_CONN_ERR event: %s", esp_err_to_name(ret));
+		six_log_message("Failed to post MQTT_CONN_ERR event");
 	}
 	xSemaphoreGive(s_mqtt_state_mutex);
 }
@@ -354,17 +354,27 @@ static void s_mqtt_event_handler(void *handler_args, esp_event_base_t base, int3
 		break;
 	case MQTT_EVENT_ERROR:
 		ESP_LOGD(TAG, "MQTT_EVENT_ERROR");
-		six_log_message("MQTT_EVENT_ERROR is reported!");
+
+		char error_msg[128];
 		if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT) {
 			ESP_LOGE(TAG, "esp-tls error: 0x%x", event->error_handle->esp_tls_last_esp_err);
 			ESP_LOGE(TAG, "TLS stack error: -0x%x", -event->error_handle->esp_tls_stack_err);
 			ESP_LOGE(TAG, "Socket errno: %d", event->error_handle->esp_transport_sock_errno);
+			snprintf(error_msg, sizeof(error_msg),
+					 "MQTT_EVENT_ERROR: esp-tls error=0x%x, TLS stack error=-0x%x, socket errno=%d",
+					 event->error_handle->esp_tls_last_esp_err, -event->error_handle->esp_tls_stack_err,
+					 event->error_handle->esp_transport_sock_errno);
+			six_log_message(error_msg);
 		}
+
 		if (event->error_handle->error_type == MQTT_ERROR_TYPE_CONNECTION_REFUSED) {
 			if (event->error_handle->connect_return_code == MQTT_CONNECTION_REFUSE_BAD_USERNAME ||
 				event->error_handle->connect_return_code == MQTT_CONNECTION_REFUSE_NOT_AUTHORIZED) {
 				ESP_LOGE(TAG, "Authentication failed - may need to update the password");
-				six_log_message("Authentication failed - may need to update the password");
+				snprintf(error_msg, sizeof(error_msg),
+						 "MQTT_EVENT_ERROR: Authentication failed, connection return code=%d",
+						 event->error_handle->connect_return_code);
+				six_log_message(error_msg);
 				if (s_mqtt_cfg.credentials.authentication.password) {
 					ESP_LOGW(TAG, "Auth failed with a credential set (redacted)");
 				}
@@ -430,14 +440,6 @@ void six_iot_start_mqtt(six_iot_config_t *iot_config, char *mqtt_endpoint, char 
 	// enable auto-connect
 	// s_mqtt_cfg.network.disable_auto_reconnect = true;
 
-	// free any previously-allocated topic strings before
-	// reassigning, guarding against a leak on re-entry.
-	free(s_iot_sdk_update_delta_topic);
-	free(s_iot_sdk_ota_topic);
-	free(s_iot_sdk_ping_topic);
-	free(s_iot_sdk_lwt_topic);
-	free(s_iot_sdk_log_topic);
-
 	s_iot_sdk_update_delta_topic =
 		six_iot_get_shadow_topic(s_iot_cfg->iot_product_id, s_iot_cfg->mqtt_clientid, UpdateDelta);
 	s_iot_sdk_ota_topic = six_iot_get_shadow_topic(s_iot_cfg->iot_product_id, s_iot_cfg->mqtt_clientid, Ota);
@@ -485,8 +487,8 @@ void six_iot_start_mqtt(six_iot_config_t *iot_config, char *mqtt_endpoint, char 
 					  MQTT_CLIENT_WATCH_DOG_EVENT_FIRST_DELAY);
 }
 
-void six_iot_watch_client() {
-	ESP_LOGD(TAG, "six_iot_watch_client event is triggered");
+void six_iot_start_watchdog_for_mqtt_client() {
+	ESP_LOGD(TAG, "six_iot_start_watchdog_for_mqtt_client event is triggered");
 	if (!s_mqtt_connected && s_mqtt_connected_once) {
 		six_defregment_heap(TAG);
 

@@ -70,9 +70,8 @@ typedef enum {
 
 	// request to refresh the token
 	REFRESH_DEVICE_TOKEN_INTENT,
-	MQTT_DISCONNECTED,
+	MQTT_CONN_ERR,
 	MQTT_CLIENT_WATCH_DOG,
-	MQTT_ERROR,
 
 	LOG_UPLOAD_REQ,
 

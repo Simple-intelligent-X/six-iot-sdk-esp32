@@ -26,7 +26,7 @@ void six_iot_start_mqtt(six_iot_config_t *iot_config, char *mqtt_endpoint, char 
 
 void six_iot_reconnect_mqtt();
 
-void six_iot_watch_client();
+void six_iot_start_watchdog_for_mqtt_client();
 
 void six_iot_handle_mqtt_conn_error();
 
