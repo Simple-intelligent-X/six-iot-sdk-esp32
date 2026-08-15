@@ -792,53 +792,6 @@ void six_iam_exchange_device_tokens(six_iot_config_t *iot_config, esp_event_loop
 	}
 }
 
-void six_iot_intent_refresh_device_tokens(void) {
-	if (s_iot_cfg == NULL) {
-		ESP_LOGW(TAG, "Device service is not initialized, can't refresh the token");
-		return;
-	}
-
-	ESP_LOGD(TAG, "Intent to refresh the token of device!");
-
-	s_report_provision_status(REFRESH_DEVICE_TOKEN_INTENT, "Intent to refresh the token of device!", NULL);
-}
-
-void six_iot_refresh_device_tokens(void) {
-	ESP_LOGD(TAG, "six_refresh_device_tokens");
-
-	if (s_iot_cfg == NULL) {
-		ESP_LOGW(TAG, "Device service is not initialized, can't refresh token");
-		return;
-	}
-
-	if (s_init_token_refresh_mutex() != ESP_OK) {
-		return;
-	}
-
-	if (xSemaphoreTake(s_token_refresh_mutex, 0) != pdTRUE) {
-
-		ESP_LOGD(TAG, "Token refresh already in progress");
-
-		return;
-	}
-
-	s_refresh_token_handler = NULL;
-
-	char *private_key = _six_iot_obtain_key_from_local();
-
-	if (private_key != NULL) {
-		_six_iam_refresh_device_tokens_with_local_key(private_key);
-
-		free(private_key);
-	} else {
-		ESP_LOGW(TAG, "Unable to obtain private key for token refresh");
-	}
-
-	s_refresh_token_handler = NULL;
-
-	xSemaphoreGive(s_token_refresh_mutex);
-}
-
 void six_iot_refresh_device_tokens_with_handler(six_iam_token_handler_t handler) {
 	ESP_LOGD(TAG, "six_refresh_device_tokens_with_handler");
 
@@ -852,31 +805,23 @@ void six_iot_refresh_device_tokens_with_handler(six_iam_token_handler_t handler)
 	}
 
 	if (xSemaphoreTake(s_token_refresh_mutex, 0) != pdTRUE) {
-
 		ESP_LOGD(TAG, "Token refresh already in progress");
-
 		return;
 	}
 
 	s_refresh_token_handler = handler;
 
 	char *private_key = _six_iot_obtain_key_from_local();
-
 	if (private_key != NULL) {
 		_six_iam_refresh_device_tokens_with_local_key(private_key);
-
 		free(private_key);
 	} else {
 		ESP_LOGW(TAG, "Unable to obtain private key for token refresh");
-
 		s_refresh_token_handler = NULL;
-
 		if (handler != NULL) {
 			handler(false, NULL, NULL);
 		}
 	}
-
 	s_refresh_token_handler = NULL;
-
 	xSemaphoreGive(s_token_refresh_mutex);
 }

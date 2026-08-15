@@ -91,7 +91,7 @@ void six_log_init(six_iot_config_t *iot_config) {
 
 	if (s_log_writer_task_handle == NULL && s_log_queue != NULL) {
 		if (xTaskCreate(s_log_writer_task, LOG_WRITER_TASK_NAME, LOG_WRITER_TASK_STACK_SIZE, NULL,
-				LOG_WRITER_TASK_PRIORITY, &s_log_writer_task_handle) != pdPASS) {
+						LOG_WRITER_TASK_PRIORITY, &s_log_writer_task_handle) != pdPASS) {
 			ESP_LOGE(TAG, "Failed to create log writer task");
 			vQueueDelete(s_log_queue);
 			s_log_queue = NULL;
@@ -292,9 +292,26 @@ static void _six_log_upload() {
 			fseek(f, 0, SEEK_SET);
 
 			if (fsize > 0) {
+				// Buffer holds sizeof(s_uploading_file_buffer)-1 bytes of content
+				// plus a null terminator. Reject anything that would overflow it —
+				// this also self-heals a corrupted/oversized SPIFFS file instead
+				// of crash-looping on it forever.
+				if ((size_t)fsize >= sizeof(s_uploading_file_buffer)) {
+					ESP_LOGE(TAG, "Log file %s too large or corrupt (%ld bytes, max %u) — discarding", file_path, fsize,
+							 (unsigned)sizeof(s_uploading_file_buffer) - 1);
+					fclose(f);
+					if (unlink(file_path) != 0) {
+						ESP_LOGE(TAG, "Failed to delete oversized/corrupt file: %s", file_path);
+					}
+					if (_is_file_path_ends_with_name(s_open_file_name, filename_to_upload)) {
+						_clean_open_file();
+					}
+					continue;
+				}
+
 				memset(s_uploading_file_buffer, 0, sizeof(s_uploading_file_buffer));
 				char *log_content = s_uploading_file_buffer;
-				
+
 				size_t read_size = fread(log_content, 1, fsize, f);
 				if (read_size != fsize) {
 					ESP_LOGE(TAG, "Failed to read entire file: %s", file_path);
@@ -303,7 +320,7 @@ static void _six_log_upload() {
 				}
 
 				// Null-terminate the string
-				log_content[fsize] = 0; 
+				log_content[fsize] = 0;
 				fclose(f);
 
 				ESP_LOGD(TAG, "s_open_file_name: %s, filename_to_upload: %s", s_open_file_name, filename_to_upload);
@@ -314,7 +331,7 @@ static void _six_log_upload() {
 				ESP_LOGD(TAG, "Uploading log file: %s, log_content: %s", filename_to_upload, log_content);
 				// will leverage the mqttt to send the log to cloud, this is light weight solution
 				esp_err_t err = six_iot_publish_log_msg(log_content);
-			
+
 				if (err == ESP_OK) {
 					ESP_LOGD(TAG, "Successfully uploaded log file, deleting file: %s", filename_to_upload);
 					if (unlink(file_path) != 0) {
