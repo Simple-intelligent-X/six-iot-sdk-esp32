@@ -7,7 +7,6 @@ set(COMPONENT_PRIV_REQUIRES)
 idf_component_register(SRCS "six_iot_sdk.c" "six_iot_shadow.c" "six_iot_init.c" "six_iam_jwt.c" "six_iot_device.c" "six_iot_mqtt.c"
                        INCLUDE_DIRS "include"
                        REQUIRES ${COMPONENT_REQUIRES}
-                       #EMBED_TXTFILES ${project_dir}/device_certs/device_cert.pem
                        )
 
 # Add binary data (These must also come after idf_component_register)

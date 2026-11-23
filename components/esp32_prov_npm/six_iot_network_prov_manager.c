@@ -323,10 +323,10 @@ static void get_device_service_name(char *service_name, size_t max) {
 #ifdef CONFIG_EXAMPLE_PROV_SEC2_PROD_MODE
 	char *nvs_name = get_network_prov_field(SEC2_NAME_KEY);
 	if (nvs_name) {
-		snprintf(service_name, max, nvs_name);
+		snprintf(service_name, max, "%s", nvs_name);
 		free(nvs_name);
 	}
-#elif
+#else
 	uint8_t eth_mac[6];
 	const char *ssid_prefix = "PROV_";
 	esp_wifi_get_mac(WIFI_IF_STA, eth_mac);
