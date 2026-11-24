@@ -1,6 +1,5 @@
-[English](README.md)
-
 https://github.com/user-attachments/assets/9316cc08-838b-43ad-8750-62db06f7737c
+[English](README.md)
 
 **提示：** 本SDK可与[six-iot-sdk-android](https://github.com/Simple-intelligent-X/six-iot-sdk-android)无缝协同使用。
 
