@@ -1,4 +1,9 @@
-https://github.com/user-attachments/assets/9316cc08-838b-43ad-8750-62db06f7737c
+<p align="center">
+  <video src="https://github.com/user-attachments/assets/9316cc08-838b-43ad-8750-62db06f7737c"
+         width="700"
+         controls>
+  </video>
+</p>
 
 [简体中文](README.zh-CN.md)
 
